@@ -1,0 +1,4 @@
+TODO separate components in Main.kt
+TODO try to read image from dicom file format
+
+TODO set constant size of app UI
