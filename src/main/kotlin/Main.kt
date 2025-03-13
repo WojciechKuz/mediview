@@ -20,15 +20,17 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.ImageBitmapConfig
 import androidx.compose.ui.graphics.toPixelMap
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
+import androidx.compose.ui.window.rememberWindowState
+
+
 
 @Composable
 @Preview
-fun App() {
-    var text by remember { mutableStateOf("Hello, World!") }
-
+fun App(imgsize: Int, layout3inRow: Boolean = false) {
     MaterialTheme {
         /*
         LazyVerticalGrid(
@@ -39,83 +41,87 @@ fun App() {
             // this scope is not @Composable!
         }
         */
-        Column {
-            Row {
-                Image(painterResource("topBridgeEnter.png"), "opis",
-                    modifier = Modifier.width(300.dp).height(300.dp).border(1.dp, Color.Red)
-                )
-                Image(painterResource("topBridgeEnter.png"), "opis",
-                    modifier = Modifier.width(300.dp).height(300.dp).border(1.dp, Color.Green)
-                    //modifier = Modifier.drawBehind {}
-                )
-            }
-            Row {
-                Image(painterResource("topBridgeEnter.png"), "opis",
-                    modifier = Modifier.width(300.dp).height(300.dp).border(1.dp, Color.Blue)
-                )
-                Column {
-                    Button(onClick = {
-                        text = "Hello, Desktop!"
-                    }) {
-                        Text(text)
-                    }
-                    Text("na prawo od przycisku", modifier = Modifier.background(Color(0xff32ff7b))) // green
-                    // Kolor zachowuje się bardzo dziwnie. Pierwsze 2 cyfry szesnastkowe to alfa.
-                    // Ten kolor, który jest wyświetlany w interfejsie jest nieprawidłowy.
-                    // element będzie miał taki kolor jak gdy skasuje się pierwsze dwa ff.
-
-                    Text("Kotlin Compose / Jetpack Compose")
-                    //val bitmap = ImageBitmap(512, 512, ImageBitmapConfig.Argb8888)
-                    //val bitmap = ImageBitmap.imageResource()
-                    //Canvas(bitmap)
-                    var redSliderPosition by remember { mutableStateOf(128f) }
-                    var greenSliderPosition by remember { mutableStateOf(128f) }
-                    var blueSliderPosition by remember { mutableStateOf(128f) }
-                    Slider(
-                        value = redSliderPosition,
-                        valueRange = 0f..256f,
-                        onValueChange = {
-                            redSliderPosition = it
-                            println("Red $redSliderPosition")
-                        },
-                        colors = SliderDefaults.colors(
-                            activeTrackColor = Color.Red,
-                        ),
-                        steps = 256,
-                    )
-                    Slider(
-                        value = greenSliderPosition,
-                        valueRange = 0f..256f,
-                        onValueChange = {
-                            greenSliderPosition = it
-                            println("Green $greenSliderPosition")
-                        },
-                        colors = SliderDefaults.colors(
-                            activeTrackColor = Color.Green,
-                        ),
-                        steps = 256,
-                    )
-                    Slider(
-                        value = blueSliderPosition,
-                        valueRange = 0f..256f,
-                        onValueChange = {
-                            blueSliderPosition = it
-                            println("Blue $blueSliderPosition")
-                        },
-                        colors = SliderDefaults.colors(
-                            activeTrackColor = Color.Blue,
-                        ),
-                        steps = 256,
-                    )
-                }
-            }
+        if (layout3inRow) {
+            layout3plus1(imgsize)
         }
-
+        else {
+            layout2x2(imgsize)
+        }
     }
 }
 
+@Composable
+@Preview
+fun layout2x2(imgsize: Int) {
+    Column(modifier = Modifier.width((imgsize*2).dp).height((imgsize*2).dp)) {
+        Row(modifier = Modifier.fillMaxWidth()) {
+            Image(painterResource("topBridgeEnter.png"), "opis",
+                modifier = Modifier.width(imgsize.dp).height(imgsize.dp).border(1.dp, Color.Red)
+                //modifier = Modifier.drawBehind {}
+            )
+            Image(painterResource("topBridgeEnter.png"), "opis",
+                modifier = Modifier.width(imgsize.dp).height(imgsize.dp).border(1.dp, Color.Green)
+            )
+        }
+        Row(modifier = Modifier.fillMaxWidth()) {
+            Image(painterResource("topBridgeEnter.png"), "opis",
+                modifier = Modifier.width(imgsize.dp).height(imgsize.dp).border(1.dp, Color.Blue)
+            )
+            uiSliders(imgsize, false)
+        }
+    }
+}
+
+@Composable
+@Preview
+fun layout3plus1(imgsize: Int) {
+    Column(modifier = Modifier.width((imgsize*3).dp).height((imgsize+60).dp)) {
+        Row(modifier = Modifier.fillMaxWidth()) {
+            Image(painterResource("topBridgeEnter.png"), "opis",
+                modifier = Modifier.width(imgsize.dp).height(imgsize.dp).border(1.dp, Color.Red)
+            )
+            Image(painterResource("topBridgeEnter.png"), "opis",
+                modifier = Modifier.width(imgsize.dp).height(imgsize.dp).border(1.dp, Color.Green)
+            )
+            Image(painterResource("topBridgeEnter.png"), "opis",
+                modifier = Modifier.width(imgsize.dp).height(imgsize.dp).border(1.dp, Color.Blue)
+            )
+        }
+        Box(modifier = Modifier.fillMaxSize()) { uiSliders(imgsize, true) }
+    }
+}
+
+@Composable
+@Preview
+fun whatsWrongWithSlidersExample() {
+    var sliderPosition by remember { mutableStateOf(128f) }
+    // why the f*** is activeColor after thumb, even docs specify otherwise.
+    // answer: steps is set so high, that ticks fill it completely, and actual track color can't be seen
+    val slidcol = SliderDefaults.colors(
+        activeTrackColor = Color.Red,
+        inactiveTrackColor = Color.Black,
+        thumbColor = Color.Red,
+        inactiveTickColor = Color.Transparent,
+        activeTickColor = Color.Transparent,
+    )
+    Slider(
+        value = sliderPosition,
+        valueRange = 0f..256f,
+        onValueChange = {
+            sliderPosition = it
+            println("Red $sliderPosition")
+        },
+        colors = slidcol,
+        steps = 256,
+        modifier = Modifier.width(256.dp)
+    )
+}
+
 fun main() = application {
-    Window(onCloseRequest = ::exitApplication, title = "MediView by wojkuzb") {
-        App()
+    val imgsize = 512
+    val use3inRowLayout = true
+    val state = rememberWindowState(size = DpSize.Unspecified)
+    Window(onCloseRequest = ::exitApplication, title = "MediView by wojkuzb", state = state) {
+        App(imgsize, use3inRowLayout)
     }
 }
