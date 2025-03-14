@@ -14,6 +14,7 @@ import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
 import java.awt.*
+import java.io.File
 
 
 @Composable
@@ -72,11 +73,11 @@ fun layout2x2(imgsize: Int) {
 @Preview
 fun layout3plus1(imgsize: Int) {
     Column(modifier = Modifier.width((imgsize*3).dp).height((imgsize+60).dp)) {
-        var imageName by remember { mutableStateOf("topBridgeEnter.png") }
+        var imageName by remember { mutableStateOf("topBridgeEnter.png") } // UWAGA! Wybór pliku działa tylko z folderu resources!
         var filePicked by remember { mutableStateOf(false) }
         if (!filePicked) {
-            imageName = pickFile() ?: ""
-            println("$imageName chosen.")
+            imageName = pickFile()
+            println("\"$imageName\" chosen.")
             filePicked = true
         }
         else { println("LaunchedEffect() again") }
@@ -91,11 +92,11 @@ fun layout3plus1(imgsize: Int) {
     }
 }
 
-fun pickFile(): String? {
+fun pickFile(): String {
     val dialog = FileDialog(null as Frame?, "Select File to Open", FileDialog.LOAD)
     dialog.isVisible = true
-    val file: String? = dialog.file
-    return file
+    //return File(dialog.directory, dialog.file).toString()
+    return dialog.file
 }
 
 @Composable
