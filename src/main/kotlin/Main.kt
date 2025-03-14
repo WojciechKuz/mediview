@@ -1,31 +1,19 @@
 import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.material.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Canvas
-import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.ImageBitmapConfig
-import androidx.compose.ui.graphics.toPixelMap
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
-
+import java.awt.*
 
 
 @Composable
@@ -48,6 +36,14 @@ fun App(imgsize: Int, layout3inRow: Boolean = false) {
             layout2x2(imgsize)
         }
     }
+}
+
+@Composable
+@Preview
+fun image(resourceName: String, imgsize: Int, color: Color) {
+    Image(painterResource(resourceName), "opis",
+        modifier = Modifier.width(imgsize.dp).height(imgsize.dp).border(1.dp, color)
+    )
 }
 
 @Composable
@@ -76,19 +72,30 @@ fun layout2x2(imgsize: Int) {
 @Preview
 fun layout3plus1(imgsize: Int) {
     Column(modifier = Modifier.width((imgsize*3).dp).height((imgsize+60).dp)) {
-        Row(modifier = Modifier.fillMaxWidth()) {
-            Image(painterResource("topBridgeEnter.png"), "opis",
-                modifier = Modifier.width(imgsize.dp).height(imgsize.dp).border(1.dp, Color.Red)
-            )
-            Image(painterResource("topBridgeEnter.png"), "opis",
-                modifier = Modifier.width(imgsize.dp).height(imgsize.dp).border(1.dp, Color.Green)
-            )
-            Image(painterResource("topBridgeEnter.png"), "opis",
-                modifier = Modifier.width(imgsize.dp).height(imgsize.dp).border(1.dp, Color.Blue)
-            )
+        var imageName by remember { mutableStateOf("topBridgeEnter.png") }
+        var filePicked by remember { mutableStateOf(false) }
+        if (!filePicked) {
+            imageName = pickFile() ?: ""
+            println("$imageName chosen.")
+            filePicked = true
+        }
+        else { println("LaunchedEffect() again") }
+        Box {
+            Row(modifier = Modifier.fillMaxWidth()) {
+                image(imageName, imgsize, Color.Red)
+                image(imageName, imgsize, Color.Green)
+                image(imageName, imgsize, Color.Blue)
+            }
         }
         Box(modifier = Modifier.fillMaxSize()) { uiSliders(imgsize, true) }
     }
+}
+
+fun pickFile(): String? {
+    val dialog = FileDialog(null as Frame?, "Select File to Open", FileDialog.LOAD)
+    dialog.isVisible = true
+    val file: String? = dialog.file
+    return file
 }
 
 @Composable
