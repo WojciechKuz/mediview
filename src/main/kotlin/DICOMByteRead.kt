@@ -2,13 +2,18 @@ import java.io.File
 
 
 class DICOMByteRead(file: File) {
-    val bytes: ByteArray = file.readBytes()
+    val cursor = DicomCursor(file.readBytes())
+    val bytes: ByteArray
+        get() = cursor.bytes
 
     public fun readDicom() {
         readMeta()
     }
     private fun readMeta() {
-        filePreamble(bytes)
-        dicomPrefix(bytes)
+        filePreamble(cursor)
+        dicomPrefix(cursor)
+        // TODO read more!!!
     }
+
+    // TODO read meta to dictionary
 }
