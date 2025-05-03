@@ -19,7 +19,7 @@ class TestDicomRead {
 
     }
 
-    @Test
+    /*@Test
     fun testIntConversion() {
         val byte = (196).toByte() // byte 0b11000100 can mean either -60 or 196
         println("To int " + byte.toInt())
@@ -27,5 +27,14 @@ class TestDicomRead {
         println("UnaryPlus " + byte.unaryPlus())
         println("UnaryMinus " + byte.unaryMinus())
         assert(byte.toPositiveInt() == 196)
+    }*/
+    @Test
+    fun testUIntConversion() {
+        val byte = (196).toByte() // byte 0b11000100 can mean either -60 or 196
+        println("To ubyte " + byte.toUByte())
+        println("To uint " + byte.toUInt())
+        println("To ubyte, then to uint " + byte.toUByte().toUInt())
+        println("My toU(), like above. " + byte.toU())
+        assert(byte.toU() == 196u)
     }
 }

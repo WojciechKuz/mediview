@@ -2,12 +2,17 @@ import java.nio.ByteOrder
 
 /** Stores tag of the data field.
  *  readTag() reads tag from ByteArray.
+ *  @param hex1 2B part of tag
+ *  @param hex2 2B part of tag
+ *  @param code 2 character "VR"
  */
-class DicomTag(val hex1: Int, val hex2: Int, val code: String, val len: Int) {
+class DicomTag(val hex1: UInt, val hex2: UInt, val code: String, val len: UInt) {
 
     override fun toString(): String {
         return "[${hex1.toString(16)} ${hex2.toString(16)}] $code $len"
     }
+
+    fun isLengthDefined(): Boolean = len != (0xffFFffFF.toUInt())
 
     companion object {
 
