@@ -1,8 +1,9 @@
-import java.nio.ByteOrder
 
 // this file is just for reference
 
-/** Stores reference to last created FieldLength object */
+/*
+
+// /x*x* Stores reference to last created FieldLength object *x/
 lateinit var last: FieldLength
 
 @Deprecated("xd", ReplaceWith("DicomCursor"))
@@ -42,6 +43,7 @@ val tag08FL = last.nextField(8) // [0008 0005] CS 0A 00 // 0x0A = 10
 val characterSetFL = last.nextField(10) // "ISO_IR 100"
 
 val endianness: ByteOrder = ByteOrder.LITTLE_ENDIAN
+*/
 
 /*
 /** returns file preamble as List of Int

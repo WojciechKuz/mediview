@@ -1,3 +1,4 @@
+import filestructure.Header
 import java.io.File
 
 
@@ -10,8 +11,8 @@ class DICOMByteRead(file: File) {
         readMeta()
     }
     private fun readMeta() {
-        filePreamble(cursor)
-        dicomPrefix(cursor)
+        Header.filePreamble(cursor)
+        Header.dicomPrefix(cursor)
         // TODO read more!!!
     }
 

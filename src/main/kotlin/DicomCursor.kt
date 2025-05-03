@@ -1,7 +1,7 @@
 
 
 /** Stores cursor (ByteArray position) and ByteArray, which this cursor iterates over. */
-class DicomCursor(val bytes: ByteArray, position: Int = 0) {
+class DicomCursor(val bytes: ByteArray, position: Int = 0): Comparable<Int> {
 
     var cursor: Int = position
         private set
@@ -18,10 +18,8 @@ class DicomCursor(val bytes: ByteArray, position: Int = 0) {
         cursor += value
     }
 
-    fun field(length: Int) = FieldLength(cursor, cursor + length)
-
     /** Returns part of ByteArray. Does NOT increase cursor. */
-    fun byteField(len: Int) = bytes[cursor, cursor + len]
+    fun byteField(len: Int) = bytes[cursor, cursor + len]   // Used in EndianParserFunctions.kt
 
     /** Reads next length bytes as int. Increases cursor. */
     fun readNextInt(len: Int = 4): Int {
@@ -33,6 +31,11 @@ class DicomCursor(val bytes: ByteArray, position: Int = 0) {
         return byteField(len).map { it.toCharStr() }.reduce { acc, i -> acc + i }.also { cursor += len }
     }
 
+    /** Reads next length byte field of given length. Increases cursor. */
+    fun readNextByteField(len: Int) = byteField(len).also { cursor += len }
+
     /** Reads next 8 bytes as Dicom tag. Increases cursor. */
     fun readNextTag() = DicomTag.readTag(this) // cursor is increased underneath, cuz it's implemented with readNextInt/Str
+
+    override fun compareTo(other: Int): Int = cursor.compareTo(other)
 }
