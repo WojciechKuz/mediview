@@ -15,5 +15,7 @@ fun informationGroupLength(cursor: DicomCursor): UInt {
     return infoGroupLength
 }
 
-// TODO universal tag reading function.
+// TODO dicom image (tag 7fe0 0010) to BitmapPainter (Kt Compose)
+
+// zTODO universal tag reading function.
 // maybe only one special case for information version, which has 2 byte offset.

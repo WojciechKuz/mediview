@@ -11,11 +11,11 @@ class TestDicomRead {
         val cursor = DicomCursor(dicomread.bytes)
         return cursor
     }
-    fun strHex(u: UInt): String {
+    fun strHex(u: UInt, pad: Int = 4): String {
 //        if (u != 0u)
 //            return "0x" + u.toString(16)
 //        return "0x0000"
-        return "0x" + u.toString(16).padStart(4, '0') // same as "0x" + hexString(u)
+        return "0x" + u.toString(16).padStart(pad, '0') // same as "0x" + hexString(u)
     }
 
     @Test
@@ -45,6 +45,14 @@ class TestDicomRead {
         val nxtInt = cursor.readNextInt(4)
         println(strHex(nxtInt))
         assert(nxtInt == 0x40302010u)
+    }
+    @Test
+    fun testTagAsUInt() {
+        val strTag = "(0028,0100)"
+        val tagAsU = tagAsUInt(strTag)
+        val mTag = mergeUInt(0x0028u, 0x0100u)
+        println(strTag + ": " + strHex(tagAsU, 8) + " should be " + strHex(mTag, 8))
+        assert(tagAsU == mTag)
     }
 
     @Test

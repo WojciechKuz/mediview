@@ -1,4 +1,19 @@
 import java.nio.ByteOrder
+import kotlin.math.min
+
+/** Read string tag formatted like `(0028,0100)` to uint */
+fun tagAsUInt(tagStr: String): UInt {
+    val b1 = charSequenceToByteArray(tagStr.subSequence(1,5))
+    val b2 = charSequenceToByteArray(tagStr.subSequence(6,10))
+    return mergeUInt(
+        byteArrayToUInt(b1),
+        byteArrayToUInt(b2)
+    )
+}
+
+fun byteArrayToUInt(bytes: ByteArray): UInt = bytes.map { it.toU() }.reduce { acc, byte -> (acc shl 4) + byte }
+
+fun charSequenceToByteArray(s: CharSequence): ByteArray = s.map{ it.toString().toByte() }.toByteArray()
 
 /** Merge two uint hexadecimal numbers, each 4 hex digits long. */
 fun mergeUInt(u1: UInt, u2: UInt): UInt = (u1 shl 16) + u2
