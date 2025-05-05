@@ -3,6 +3,7 @@ package filestructure
 import DataType
 import DicomByteData
 import DicomCursor
+import DicomDataElement
 import DicomTag
 import filestructure.groups.*
 import tagAsUInt
@@ -14,7 +15,9 @@ object DataSet: GroupBase() {
     }
     fun dataMapUntilPixelData(cursor: DicomCursor): Map<UInt, DicomByteData> = createDataMap(cursor) { tag -> tag.tag == tagAsUInt("(7FE0,0010)") }
 
-    //fun readImageData
+    /**
+     * @param imgInfo Map of tag to data containing information about image */
+    fun readImageData(cursor: DicomCursor, imgInfo: Map<UInt, DicomByteData>) = ImageReader.skipImageData(cursor, imgInfo)
 
     /** Decode a tag given in format `Name (ffff,ffff)` to a pair. Tag name as value, tag number as key. */
     fun tagToPair(str: String, vr: String = "UN"): Pair<UInt, DataType> {
@@ -38,3 +41,5 @@ object DataSet: GroupBase() {
         "(2020,0020) Polarity" * "CS",
     ).associateBy { it.tag } + PixelGroup.pixelDataTagNames + StudyGroup.dataTagNames + DeviceGroup.deviceDataTagNames
 }
+
+typealias TagToDataMap = Map<UInt, DicomDataElement<out Any>>

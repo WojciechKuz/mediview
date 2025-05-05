@@ -1,6 +1,6 @@
 import filestructure.DataSet
-import filestructure.DataSet.tagToPair
 import filestructure.Header
+import filestructure.ImageReader
 import filestructure.groups.AllTagsFromPDF
 import filestructure.informationGroupLength
 import java.io.File
@@ -58,28 +58,22 @@ class TestDicomRead {
         assert(imgTag.tag == imgTagID)
     }
 
+    /** read file until 7FE0 to a map. Also, print these tags. */
+    fun dataMapUntilImage(cursor: DicomCursor): Map<UInt, DicomDataElement<out Any>> {
+        val dataMap = DataSet.createDataMap(cursor) {
+                tag -> tag.tag == tagAsUInt("(7FE0,0010)") // stop reading at "Pixel Data"
+        }.mapValues { (_, v) -> determineDataType(v) }
+        return dataMap
+    }
+
     @Test
-    fun printDataElements() {
+    fun testSiemensTagEnd() {
         val cursor = cursorAtDataSet()
         println("Scanning file IMG-0001-00001.dcm...")
-        val dataMap = DataSet.createDataMap(cursor){
-            tag -> tag.tag == tagAsUInt("(7FE0,0010)") // stop reading at "Pixel Data"
-        }.mapValues { (_, v) -> determineDataType(v) }
-        val descriptionNotFoundList = mutableListOf<String>()
-        dataMap.forEach { (k, v) ->
-            println(
-                v.toString() +
-                    when(k) {
-                        in DataSet.tagNames -> "\t -> " + DataSet.tagNames[k]
-                        in AllTagsFromPDF.allTagMap -> "\t -> " + AllTagsFromPDF.allTagMap[k]
-                        else -> "".also { descriptionNotFoundList.add(v.getStringTag()) }
-                    }
-            )
-        }
-        //println("\nThese tag descriptions were not found:\n$descriptionNotFoundList")
+        val dataMap = dataMapUntilImage(cursor)
         val siemensTag = tagAsUInt("[0008 0070]")
         val weirdEndTag = tagAsUInt("[0002 0002]")
-        println("Check suspicious tags - $siemensTag $weirdEndTag")
+        println("Check suspicious tags - ${strHex(siemensTag)} ${strHex(weirdEndTag)}")
         if(dataMap.containsKey(siemensTag)){
             val siemens = dataMap[siemensTag]!!
             println("Last char in \"${siemens.value}\" is \'${(siemens.value as String).last()}\' and has code ${(siemens.value as String).last().code}")
@@ -91,6 +85,32 @@ class TestDicomRead {
         assert(dataMap.containsKey(siemensTag)  && (dataMap[siemensTag]!!.value as String).last() == ' ')
         assert(dataMap.containsKey(weirdEndTag) && (dataMap[weirdEndTag]!!.value as String).last() == ' ')
     }
+
+    @Test
+    fun testPrintAllFileTags() {
+        val cursor = cursorAtDataSet()
+        val descriptionNotFoundList = mutableListOf<String>()
+
+        println("Scanning file IMG-0001-00001.dcm...")
+        val dataMap1 = dataMapUntilImage(cursor)
+        ImageReader.skipImageData(cursor, dataMap1)
+        val dataMap2 = DataSet.createDataMap(cursor) {
+                tag -> !tag.isLengthDefined() // stop reading when not defined length
+        }.mapValues { (_, v) -> determineDataType(v) }
+        val dataMap = dataMap1 + dataMap2
+        dataMap.forEach { (k, v) ->
+            println(
+                v.toString() +
+                        when(k) {
+                            in DataSet.tagNames -> "\t -> " + DataSet.tagNames[k]
+                            in AllTagsFromPDF.allTagMap -> "\t -> " + AllTagsFromPDF.allTagMap[k]
+                            else -> "".also { descriptionNotFoundList.add(v.getStringTag()) }
+                        }
+            )
+        }
+        println("\nThese tag descriptions were not found:\n$descriptionNotFoundList")
+    }
+
 
     @Test
     fun printAllVRs() {
