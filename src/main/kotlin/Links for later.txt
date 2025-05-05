@@ -1,0 +1,25 @@
+Links for later to DICOM file documentation
+
+Basic file structure. Header, dataSet.
+-> https://www.leadtools.com/help/sdk/v20/dicom/api/overview-basic-dicom-file-structure.html
+
+Definitions
+-> https://www.leadtools.com/help/sdk/v20/dicom/api/overview-definitions.html
+
+Data Element
+-> https://www.leadtools.com/help/sdk/v20/dicom/api/overview-data-element-fields.html
+-> https://www.leadtools.com/help/sdk/v20/dicom/api/overview-data-element-structure.html
+
+An "Overlay Plane" describes graphics or ... that is associated with an image...
+-> https://www.leadtools.com/help/sdk/v20/dicom/api/overlays-overview.html
+
+VR codes
+-> https://www.leadtools.com/help/sdk/v20/dicom/api/value-representation-constants.html
+
+LUT Encoding. slope, window center
+-> https://www.leadtools.com/help/sdk/v20/dicom/api/lut-encoding-overview.html
+
+PDF
+-> https://www.konicaminolta.com/content/download/1148/8234/CS-3%20DICOM%203.0%20Conformance%20Statement.pdf
+
+// kotlin list to map: associate, associateBy, associateTo

@@ -6,7 +6,7 @@
  *  @param vr 2 character code. Value representation, type of tag
  *  @param vl length of value field
  */
-class DicomTag(hex1: UInt, hex2: UInt, val vr: String, val vl: UInt) {
+open class DicomTag(hex1: UInt, hex2: UInt, val vr: String, val vl: UInt) {
 
     /** ordered like in documentation. hex1, then hex2 but both in little-endian. */
     val tag: UInt = ((hex1 shl 16) + hex2) // shl means shift left
@@ -24,7 +24,9 @@ class DicomTag(hex1: UInt, hex2: UInt, val vr: String, val vl: UInt) {
         return "$tagStr $vr length undefined"
     }
 
-    fun isLengthDefined(): Boolean = (vl != 0xffFFffFF.toUInt() && !vrAllowsUndefinedLength())
+    fun getStringTag() = "[${hexString(tagPt1)} ${hexString(tagPt2)}]"
+
+    fun isLengthDefined(): Boolean = !(vl == 0xffFFffFF.toUInt() && vrAllowsUndefinedLength())
 
     /** checks if cursor has next len bytes */
     fun canReadValue(cursor: DicomCursor) = cursor.hasNext(vl)

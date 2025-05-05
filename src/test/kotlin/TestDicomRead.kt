@@ -1,4 +1,7 @@
+import filestructure.DataSet
+import filestructure.DataSet.tagToPair
 import filestructure.Header
+import filestructure.groups.AllTagsFromPDF
 import filestructure.informationGroupLength
 import java.io.File
 import kotlin.test.Test
@@ -11,12 +14,21 @@ class TestDicomRead {
         val cursor = DicomCursor(dicomread.bytes)
         return cursor
     }
+    /** pass Header, put cursor at DataSet */
+    fun cursorAtDataSet(): DicomCursor {
+        val cursor = getCursor()
+        Header.skipPreamble(cursor)
+        Header.dicomPrefix(cursor)
+        return cursor
+    }
     fun strHex(u: UInt, pad: Int = 4): String {
 //        if (u != 0u)
 //            return "0x" + u.toString(16)
 //        return "0x0000"
         return "0x" + u.toString(16).padStart(pad, '0') // same as "0x" + hexString(u)
     }
+
+
 
     @Test
     fun testDicomRead() {
@@ -28,31 +40,6 @@ class TestDicomRead {
         cursor.moveBy(infoLength)       // FIXME we're skipping infoGroup?
         println(cursor.readNextByteField(16).toHexString())
         println(cursor.readNextByteField(16).toHexString())
-    }
-
-    @Test
-    fun testEndianness() {
-        val bytearr = byteArrayOf(0x10, 0x00, 0x00, 0x00) // 0x10, 0x00 expected to be 0x0010
-        val cursor = DicomCursor(bytearr)
-        val nxtInt = cursor.readNextInt(2)
-        println(strHex(nxtInt))
-        assert(nxtInt == 0x0010u)
-    }
-    @Test
-    fun test4Byte() {
-        val bytearr = byteArrayOf(0x10, 0x20, 0x30, 0x40) // expected to be 0x40302010
-        val cursor = DicomCursor(bytearr)
-        val nxtInt = cursor.readNextInt(4)
-        println(strHex(nxtInt))
-        assert(nxtInt == 0x40302010u)
-    }
-    @Test
-    fun testTagAsUInt() {
-        val strTag = "(0028,0100)"
-        val tagAsU = tagAsUInt(strTag)
-        val mTag = mergeUInt(0x0028u, 0x0100u)
-        println(strTag + ": " + strHex(tagAsU, 8) + " should be " + strHex(mTag, 8))
-        assert(tagAsU == mTag)
     }
 
     @Test
@@ -72,19 +59,48 @@ class TestDicomRead {
     }
 
     @Test
-    fun mergeUIntTest() {
-        val mrg = mergeUInt(0x7FE0u, 0x0010u)
-        println("0x" + mrg.toString(16))
-        assert(0x7FE00010u == mrg)
+    fun printDataElements() {
+        val cursor = cursorAtDataSet()
+        println("Scanning file IMG-0001-00001.dcm...")
+        val dataMap = DataSet.createDataMap(cursor){
+            tag -> tag.tag == tagAsUInt("(7FE0,0010)") // stop reading at "Pixel Data"
+        }.mapValues { (_, v) -> determineDataType(v) }
+        val descriptionNotFoundList = mutableListOf<String>()
+        dataMap.forEach { (k, v) ->
+            println(
+                v.toString() +
+                    when(k) {
+                        in DataSet.tagNames -> "\t -> " + DataSet.tagNames[k]
+                        in AllTagsFromPDF.allTagMap -> "\t -> " + AllTagsFromPDF.allTagMap[k]
+                        else -> "".also { descriptionNotFoundList.add(v.getStringTag()) }
+                    }
+            )
+        }
+        //println("\nThese tag descriptions were not found:\n$descriptionNotFoundList")
+        val siemensTag = tagAsUInt("[0008 0070]")
+        val weirdEndTag = tagAsUInt("[0002 0002]")
+        println("Check suspicious tags - $siemensTag $weirdEndTag")
+        if(dataMap.containsKey(siemensTag)){
+            val siemens = dataMap[siemensTag]!!
+            println("Last char in \"${siemens.value}\" is \'${(siemens.value as String).last()}\' and has code ${(siemens.value as String).last().code}")
+        }
+        if(dataMap.containsKey(weirdEndTag)){
+            val weirdEnd = dataMap[weirdEndTag]!!
+            println("Last char in \"${weirdEnd.value}\" is \'${(weirdEnd.value as String).last()}\' and has code ${(weirdEnd.value as String).last().code}")
+        }
+        assert(dataMap.containsKey(siemensTag)  && (dataMap[siemensTag]!!.value as String).last() == ' ')
+        assert(dataMap.containsKey(weirdEndTag) && (dataMap[weirdEndTag]!!.value as String).last() == ' ')
     }
 
     @Test
-    fun testUIntConversion() {
-        val byte = (196).toByte() // byte 0b11000100 can mean either -60 or 196
-        println("To ubyte " + byte.toUByte())
-        println("To uint " + byte.toUInt())
-        println("To ubyte, then to uint " + byte.toUByte().toUInt())
-        println("My toU(), like above. " + byte.toU())
-        assert(byte.toU() == 196u)
+    fun printAllVRs() {
+        val cursor = cursorAtDataSet()
+        val set = mutableSetOf<String>()
+        DataSet.createDataMap(cursor).forEach { (k, v) ->
+            if(v.vr !in set) {
+                set.add(v.vr)
+            }
+        }
+        println("All VRs in file: \n${set.joinToString(", ")}")
     }
 }

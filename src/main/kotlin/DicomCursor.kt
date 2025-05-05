@@ -59,9 +59,35 @@ class DicomCursor(val bytes: ByteArray, position: UInt = 0u): Comparable<UInt> {
     /** Reads next length byte field of given length. Increases cursor. */
     fun readNextByteField(len: Int) = readNextByteField(len.toUInt())
 
+    /** Safe against undefined length. If length is undefined reads 0 bytes. For more documentation see [readNextByteField]. */
+    fun safeReadNextByteField(tag: DicomTag) = if(tag.isLengthDefined()) {
+        readNextByteField(tag.len)
+    } else {
+        readNextByteField(0u)
+    }
+
     /** Reads next 8 bytes as Dicom tag. Increases cursor. */
     fun readNextTag() = DicomTag.readTag(this) // cursor is increased underneath, cuz it's implemented with readNextInt/Str
 
+    /** Read all tags and values starting at cursor position and until the end. Increases cursor, sets it to the end.
+     * @param readUntil optional expression that can stop reading earlier. Leaves cursor right before tag, for which readUntil returns true. */
+    fun readAllTags(readUntil: (DicomTag) -> Boolean = { false }): List<DicomByteData> {
+        val list = mutableListOf<DicomByteData>()
+        while(hasNextTag()) {
+            val cursorBeforeTag = cursor
+            val nextTag = readNextTag()
+            if(!nextTag.canReadValue(this))
+                break
+            if(readUntil(nextTag)) {
+                cursor = cursorBeforeTag
+                break
+            }
+            list.add(
+                DicomByteData(nextTag, safeReadNextByteField(nextTag))
+            )
+        }
+        return list
+    }
     /** @param tag 4 byte tag
      * @return new cursor with position just before tag. If nothing found, returns cursor set to the end. */
     fun findTag(tag: UInt): DicomCursor {
