@@ -20,7 +20,7 @@ object ImageReader {
         val bitsStored = imgInfo.getTag("(0028,0101)").value as UInt
         val highBit = imgInfo.getTag("(0028,0102)").value as UInt
 
-        val skipBy = rows * columns * (bitsAllocated / 8u) / 2u // FIXME Don't know why to divide by 2
+        val skipBy = rows * columns * (bitsAllocated / 8u) / 2u // FIXME 512*512*2 262144 != official 275442
         println("Skip image - $skipBy Bytes")
         cursor.readNextTag()
         val cursorBeforeMove = cursor.cursor

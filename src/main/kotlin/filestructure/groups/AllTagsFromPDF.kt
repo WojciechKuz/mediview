@@ -1,7 +1,6 @@
 package filestructure.groups
 
 import DataType
-import filestructure.DataSet.tagToPair
 
 object AllTagsFromPDF {
     /** Copied from table in documentation pdf, processed in Notepad++. Finally, pasted here.  */

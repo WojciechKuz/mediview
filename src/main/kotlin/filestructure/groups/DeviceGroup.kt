@@ -1,7 +1,6 @@
 package filestructure.groups
 
 import DataType
-import filestructure.DataSet.tagToPair
 
 object DeviceGroup: GroupBase() {
     val deviceDataTagNames: Map<UInt, DataType> = listOf(

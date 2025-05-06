@@ -1,7 +1,6 @@
 package filestructure.groups
 
 import DataType
-import filestructure.DataSet.tagToPair
 
 /** 0028 group regarding image data */
 object PixelGroup: GroupBase() {

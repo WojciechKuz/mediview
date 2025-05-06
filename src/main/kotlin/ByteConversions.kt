@@ -15,6 +15,7 @@ fun uIntAsTag(tagUInt: UInt): String = "(${hexString(tagUInt shl 16)},${hexStrin
 fun byteArrayToUInt(bytes: ByteArray): UInt = bytes.map { it.toU() }.reduce { acc, byte -> (acc shl 4) + byte }
 
 // THIS IS WRONG char->Byte:  { it.code.toString(16).toByte() }
+
 fun charSequenceToByteArray(s: CharSequence): ByteArray = s.map { charToByte(it) }.toByteArray()
 
 /** Merge two uint hexadecimal numbers, each 4 hex digits long. */

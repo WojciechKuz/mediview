@@ -1,4 +1,4 @@
-import filestructure.DataSet.tagToPair
+import filestructure.groups.GroupBase
 import filestructure.Header
 import filestructure.informationGroupLength
 import java.io.File
@@ -14,7 +14,7 @@ class TestByteConversions {
     @Test
     fun testTagName() {
         val tagName = "Bits Allocated (0028,0100)"
-        val pair = tagToPair(tagName)
+        val pair = GroupBase().tagToPair(tagName)
         println("0x" + strHex(pair.first, 8))
         println(pair.second.description)
         assert(pair.first == 0x00280100u)

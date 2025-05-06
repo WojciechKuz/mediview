@@ -1,8 +1,5 @@
-import filestructure.DataSet
-import filestructure.Header
-import filestructure.ImageReader
+import filestructure.*
 import filestructure.groups.AllTagsFromPDF
-import filestructure.informationGroupLength
 import java.io.File
 import kotlin.test.Test
 
@@ -58,11 +55,15 @@ class TestDicomRead {
         assert(imgTag.tag == imgTagID)
     }
 
-    /** read file until 7FE0 to a map. Also, print these tags. */
+    /** read file until 7FE0 to a map. */
     fun dataMapUntilImage(cursor: DicomCursor): Map<UInt, DicomDataElement<out Any>> {
-        val dataMap = DataSet.createDataMap(cursor) {
+        val dataMap = DataSet().createDataMap(cursor) {
                 tag -> tag.tag == tagAsUInt("(7FE0,0010)") // stop reading at "Pixel Data"
         }.mapValues { (_, v) -> determineDataType(v) }
+        return dataMap
+    }
+    fun fullDataMap(cursor: DicomCursor): Map<UInt, DicomDataElement<out Any>> {
+        val dataMap = DataSet().createDataMap(cursor).mapValues { (_, v) -> determineDataType(v) }
         return dataMap
     }
 
@@ -86,29 +87,32 @@ class TestDicomRead {
         assert(dataMap.containsKey(weirdEndTag) && (dataMap[weirdEndTag]!!.value as String).last() == ' ')
     }
 
-    @Test
-    fun testPrintAllFileTags() {
-        val cursor = cursorAtDataSet()
+    fun printTags(dataMap: TagToDataMap) {
         val descriptionNotFoundList = mutableListOf<String>()
-
-        println("Scanning file IMG-0001-00001.dcm...")
-        val dataMap1 = dataMapUntilImage(cursor)
-        ImageReader.skipImageData(cursor, dataMap1)
-        val dataMap2 = DataSet.createDataMap(cursor) {
-                tag -> !tag.isLengthDefined() // stop reading when not defined length
-        }.mapValues { (_, v) -> determineDataType(v) }
-        val dataMap = dataMap1 + dataMap2
         dataMap.forEach { (k, v) ->
-            println(
-                v.toString() +
+            if (v.len > 256u) {
+                println(v.toString())
+            }
+            else {
+                println( v.toString() +
                         when(k) {
-                            in DataSet.tagNames -> "\t -> " + DataSet.tagNames[k]
+                            in DataSet().tagNames -> "\t -> " + DataSet().tagNames[k]
                             in AllTagsFromPDF.allTagMap -> "\t -> " + AllTagsFromPDF.allTagMap[k]
                             else -> "".also { descriptionNotFoundList.add(v.getStringTag()) }
                         }
-            )
+                )
+            }
         }
         println("\nThese tag descriptions were not found:\n$descriptionNotFoundList")
+    }
+
+    @Test
+    fun testPrintAllFileTags() {
+        val cursor = cursorAtDataSet()
+        println("Scanning file IMG-0001-00001.dcm...")
+        val dataMap = fullDataMap(cursor) //dataMapUntilImage(cursor)
+        println("Reading finished. Print...")
+        printTags(dataMap)
     }
 
 
@@ -116,7 +120,7 @@ class TestDicomRead {
     fun printAllVRs() {
         val cursor = cursorAtDataSet()
         val set = mutableSetOf<String>()
-        DataSet.createDataMap(cursor).forEach { (k, v) ->
+        DataSet().createDataMap(cursor).forEach { (k, v) ->
             if(v.vr !in set) {
                 set.add(v.vr)
             }

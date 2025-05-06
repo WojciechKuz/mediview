@@ -21,7 +21,7 @@ class DicomCursor(val bytes: ByteArray, position: UInt = 0u): Comparable<UInt> {
     /** Check if next nofBytes can be read. */
     fun hasNext(nofBytes: Int = 1): Boolean = hasNext( nofBytes.toUInt() )
     /** Check if next nofBytes can be read. */
-    fun hasNext(nofBytes: UInt = 1u): Boolean = cursor + nofBytes < bytes.size.toUInt()
+    fun hasNext(nofBytes: UInt = 1u): Boolean = cursor + nofBytes <= bytes.size.toUInt()
 
     fun hasReachedEnd() = !hasNext(1)
 
@@ -34,6 +34,10 @@ class DicomCursor(val bytes: ByteArray, position: UInt = 0u): Comparable<UInt> {
     }
     /** Move cursor by given value forward. */
     fun moveBy(value: Int) = moveBy(value.toUInt())
+
+    fun restoreCursorPosition(prevPosition: UInt) {
+        cursor = prevPosition
+    }
 
     /** Returns part of ByteArray. Does NOT increase cursor. */
     fun byteField(len: UInt) = bytes[cursor, (cursor + len)]   // Used in EndianParserFunctions.kt
@@ -79,6 +83,7 @@ class DicomCursor(val bytes: ByteArray, position: UInt = 0u): Comparable<UInt> {
             if(!nextTag.canReadValue(this))
                 break
             if(readUntil(nextTag)) {
+                println("Stopped reading for tag $nextTag")
                 cursor = cursorBeforeTag
                 break
             }
