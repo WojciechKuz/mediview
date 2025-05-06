@@ -12,14 +12,33 @@ fun tagAsUInt(tagStr: String): UInt {
 /** Return tag formatted like `(0028,0100)` from uint */
 fun uIntAsTag(tagUInt: UInt): String = "(${hexString(tagUInt shl 16)},${hexString(tagUInt and 0xffffu)})"
 
-fun byteArrayToUInt(bytes: ByteArray): UInt = bytes.map { it.toU() }.reduce { acc, byte -> (acc shl 4) + byte }
+/** Used in converting 4 hexadecimal characters to 2 Byte unsigned integer. */
+private fun byteArrayToUInt(bytes: ByteArray): UInt {
+    var uint: UInt = 0u
+    bytes.forEach { b ->
+        uint = (uint shl 4) + b.toU()
+    }
+    return uint
+}
+
+/** Used in converting 4 hexadecimal characters to 2 Byte unsigned integer. */
+private fun unoptimizedByteArrayToUInt(bytes: ByteArray): UInt = bytes.map { it.toU() }.reduce { acc, byte -> (acc shl 4) + byte }
 
 // THIS IS WRONG char->Byte:  { it.code.toString(16).toByte() }
 
-fun charSequenceToByteArray(s: CharSequence): ByteArray = s.map { charToByte(it) }.toByteArray()
+/** Used in converting 4 hexadecimal characters to 2 Byte unsigned integer. */
+private fun charSequenceToByteArray(s: CharSequence): ByteArray {
+    val ba = ByteArray(4)
+    s.forEachIndexed { i, c ->
+        ba[i] = charToByte(c)
+    }
+    return ba
+}
+
+private fun unoptimizedCharSequenceToByteArray(s: CharSequence): ByteArray = s.map { charToByte(it) }.toByteArray()
 
 /** Merge two uint hexadecimal numbers, each 4 hex digits long. */
-fun mergeUInt(u1: UInt, u2: UInt): UInt = (u1 shl 16) + u2
+private fun mergeUInt(u1: UInt, u2: UInt): UInt = (u1 shl 16) + u2
 
 /** Convert hexadecimal digit to byte */
 fun charToByte(c: Char): Byte = when(true) {
@@ -30,7 +49,7 @@ fun charToByte(c: Char): Byte = when(true) {
 }.toByte()
 
 /** Converts lower 4 bits to hexadecimal character */
-fun byteToHexChar(u: UInt): Char {
+private fun byteToHexChar(u: UInt): Char {
     val v = (u and 0x0Fu).toInt()
     when(v) {
         in 0..9 -> return '0' + v
@@ -48,7 +67,7 @@ fun Byte.toU() = this.toUByte().toUInt()
 /** Using `Byte.toUInt()` is banned in "mediview" project because of unexpected behaviour. Use `Byte.toU()` */
 fun Byte.toUInt(): UInt { println("Using `Byte.toUInt()` is banned in \"mediview\" project. Use `Byte.toU()` instead."); return 0u }
 
-/** My toHexString() */
+/** My toHexString(). HexString in format: FF FF ... */
 fun ByteArray.toHexString(): String {
     if (this.isEmpty()) return ""
     return byteArrToHexStrOptLvl2(this)
@@ -65,6 +84,7 @@ private fun byteArrToHexStrOptLvl1(ba: ByteArray): String {
     sb.trim()
     return sb.toString()
 }
+
 private fun byteArrToHexStrOptLvl2(ba: ByteArray): String {
     // for ByteArray 275466 long, 11 ms!
     val chs = CharArray(ba.size * 3)
@@ -77,7 +97,7 @@ private fun byteArrToHexStrOptLvl2(ba: ByteArray): String {
     return chs.toString().trim()
 }
 
-/** return 4 digit hexadecimal */
+/** return 4 digit hexadecimal. */
 fun hexString(uInt: UInt, pad: Int = 4) = uInt.toString(16).padStart(pad, '0')
 
 /** Parse (unsigned) int with given endian. Parse first length bytes in FieldLength range. Does NOT increase cursor. */

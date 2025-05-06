@@ -41,7 +41,7 @@ class TestDicomRead {
 
     @Test
     fun testFindImgTag() {
-        val imgTagID = mergeUInt(0x7FE0u, 0x0010u)
+        val imgTagID = 0x7FE00010u  // (7FE0,0010)
         val cursor = getCursor().findTag(imgTagID)
         println("Looking for ${strHex(imgTagID)} tag.")
 

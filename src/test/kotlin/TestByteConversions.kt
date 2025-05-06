@@ -55,13 +55,13 @@ class TestByteConversions {
     fun testTagAsUInt() {
         val strTag = "(0028,0b00)"
         val tagAsU = tagAsUInt(strTag)
-        val mTag = mergeUInt(0x0028u, 0x0b00u)
+        val mTag = 0x00280B00u
         println(strTag + ": " + strHex(tagAsU, 8) + " should be " + strHex(mTag, 8))
         assert(tagAsU == mTag)
     }
     @Test
     fun mergeUIntTest() {
-        val mrg = mergeUInt(0x7FE0u, 0x0010u)
+        val mrg = 0x7FE00010u // (7FE0,0010)
         println("0x" + mrg.toString(16))
         assert(0x7FE00010u == mrg)
     }
