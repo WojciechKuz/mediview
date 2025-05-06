@@ -29,6 +29,16 @@ fun charToByte(c: Char): Byte = when(true) {
     else -> throw Exception("cannot convert $c to byte")
 }.toByte()
 
+/** Converts lower 4 bits to hexadecimal character */
+fun byteToHexChar(u: UInt): Char {
+    val v = (u and 0x0Fu).toInt()
+    when(v) {
+        in 0..9 -> return '0' + v
+        in 10..15 -> return 'A' + v
+        else -> return ' '
+    }
+}
+
 /** 1 byte to ascii character as a String. I added this to shorten the byte to character conversion. */
 fun Byte.toCharStr() = this.toInt().toChar().toString()
 
@@ -38,9 +48,33 @@ fun Byte.toU() = this.toUByte().toUInt()
 /** Using `Byte.toUInt()` is banned in "mediview" project because of unexpected behaviour. Use `Byte.toU()` */
 fun Byte.toUInt(): UInt { println("Using `Byte.toUInt()` is banned in \"mediview\" project. Use `Byte.toU()` instead."); return 0u }
 
+/** My toHexString() */
 fun ByteArray.toHexString(): String {
     if (this.isEmpty()) return ""
-    return this.map { String.format("%02X ", it) }.reduce { acc, s -> acc + s }.trim()
+    return byteArrToHexStrOptLvl2(this)
+}
+
+private fun byteArrToHexStrUnoptimized(ba: ByteArray): String {
+    // for ByteArray 275466 long, 9156 ms!
+    return ba.map { String.format("%02X ", it) }.reduce { acc, s -> acc + s }.trim()
+}
+private fun byteArrToHexStrOptLvl1(ba: ByteArray): String {
+    // for ByteArray 275466 long, 1145 ms!
+    val sb = StringBuilder()
+    ba.forEach { sb.append(String.format("%02X ", it)) }
+    sb.trim()
+    return sb.toString()
+}
+private fun byteArrToHexStrOptLvl2(ba: ByteArray): String {
+    // for ByteArray 275466 long, 11 ms!
+    val chs = CharArray(ba.size * 3)
+    ba.forEachIndexed { i, byte ->
+        val u = byte.toU()
+        chs[3*i  ] = byteToHexChar(u shl 4)
+        chs[3*i+1] = byteToHexChar(u)
+        chs[3*i+2] = ' '
+    }
+    return chs.toString().trim()
 }
 
 /** return 4 digit hexadecimal */
