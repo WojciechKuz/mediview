@@ -94,7 +94,8 @@ private fun byteArrToHexStrOptLvl2(ba: ByteArray): String {
         chs[3*i+1] = byteToHexChar(u)
         chs[3*i+2] = ' '
     }
-    return chs.toString().trim()
+    //return chs.toString().trim()
+    return String(chs).trim()
 }
 
 /** return 4 digit hexadecimal. */

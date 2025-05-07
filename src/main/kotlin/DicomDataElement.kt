@@ -23,6 +23,12 @@ open class DicomDataElement<T>(hex1: UInt, hex2: UInt, vr: String, vl: UInt, val
                 ""
         //is UInt -> " 0x" + hexString(value)
         is UInt -> " " + value
+        is SQItemList -> {     // Can't infer type, thus *. But I know It's TagToDataMap
+            " " + if(value.isNotEmpty())
+                value.toString()
+            else
+                ""
+        }
         else -> " " + value.toString()
     }
 
@@ -65,3 +71,8 @@ open class DicomDataElement<T>(hex1: UInt, hex2: UInt, vr: String, vl: UInt, val
 }
 
 typealias DicomByteData = DicomDataElement<ByteArray>
+typealias TagToDataMap = Map<UInt, DicomDataElement<out Any>>
+
+fun DataMapToString(dataMap: TagToDataMap): String {
+    return ""
+}

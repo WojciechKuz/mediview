@@ -1,3 +1,4 @@
+import java.io.File
 
 
 /** Stores cursor (ByteArray position) and ByteArray, which this cursor iterates over.
@@ -10,6 +11,7 @@
 class DicomCursor(val bytes: ByteArray, position: UInt = 0u): Comparable<UInt> {
 
     constructor(prevCursor: DicomCursor): this(prevCursor.bytes, prevCursor.cursor)
+    constructor(file: File): this(file.readBytes())
 
     var cursor: UInt = position
         private set

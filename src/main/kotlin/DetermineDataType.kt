@@ -1,3 +1,4 @@
+import filestructure.DataRead
 
 
 fun determineDataType(byteData: DicomByteData): DicomDataElement<out Any> {
@@ -32,11 +33,12 @@ fun determineDataType(byteData: DicomByteData): DicomDataElement<out Any> {
         } 	// [0x5549U] Unique Identifier (UID)
 
         "OB" -> {
-            if(byteData.isLengthDefined()) {
+            if(byteData.isLengthDefined() && byteData.vl <= DicomDataElement.tooLong) {
                 byteData.valueAsHexStr()
             }
-            else
+            else {
                 byteData // shouldn't print in that case
+            }
         } 	// [0x4F42U] Other Byte
 
         //"AE" -> {} 	// [0x4145U] Application Entity
@@ -53,7 +55,9 @@ fun determineDataType(byteData: DicomByteData): DicomDataElement<out Any> {
             byteData.valueAsString()
         } 	// [0x504EU] Person Name
         //"SL" -> {} 	// [0x534CU] Signed Long
-        "SQ" -> { byteData } 	// [0x5351U] Sequence of Items
+        "SQ" -> {
+            DataRead().interpretSQData(byteData)
+        } 	// [0x5351U] Sequence of Items
         "SS" -> { byteData } 	// [0x5353U] Signed Short
         "TM" -> { byteData } 	// [0x544DU] Time
         //"UC" -> {} 	// [0x5543U] Unlimited Characters

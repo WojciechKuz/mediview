@@ -1,7 +1,6 @@
 package filestructure.groups
 
 import DataType
-import filestructure.DataSet
 
 open class GroupBase {
 
