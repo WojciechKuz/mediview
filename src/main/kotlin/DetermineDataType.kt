@@ -33,8 +33,16 @@ fun determineDataType(byteData: DicomByteData): DicomDataElement<out Any> {
         } 	// [0x5549U] Unique Identifier (UID)
 
         "OB" -> {
-            if(byteData.isLengthDefined() && byteData.vl <= DicomDataElement.tooLong) {
-                byteData.valueAsHexStr()
+            if(byteData.isLengthDefined() /*&& byteData.vl <= DicomDataElement.tooLong*/) {
+                //byteData.valueAsHexStr()
+                if(byteData.len > 4u) {
+                    println("Long OB")
+                    DataRead().interpretOBData(byteData)
+                }
+                else {
+                    println("Short OB")
+                    byteData.valueAsHexStr()
+                }
             }
             else {
                 byteData // shouldn't print in that case

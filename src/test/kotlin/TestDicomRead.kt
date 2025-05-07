@@ -27,18 +27,13 @@ class TestDicomRead {
     fun printTags(dataMap: TagToDataMap) {
         val descriptionNotFoundList = mutableListOf<String>()
         dataMap.forEach { (k, v) ->
-            if (v.len > 256u) {
-                println(v.toString())
-            }
-            else {
-                println( v.toString() +
-                        when(k) {
-                            in DataSet.tagNames -> "\t -> " + DataSet.tagNames[k]
-                            in AllTagsFromPDF.allTagMap -> "\t -> " + AllTagsFromPDF.allTagMap[k]
-                            else -> "".also { descriptionNotFoundList.add(v.getStringTag()) }
-                        }
-                )
-            }
+            println( v.toString() +
+                    when(k) {
+                        in DataSet.tagNames -> "\t -> " + DataSet.tagNames[k]
+                        in AllTagsFromPDF.allTagMap -> "\t -> " + AllTagsFromPDF.allTagMap[k]
+                        else -> "".also { descriptionNotFoundList.add(v.getStringTag()) }
+                    }
+            )
         }
         println("\nThese tag descriptions were not found:\n$descriptionNotFoundList")
     }

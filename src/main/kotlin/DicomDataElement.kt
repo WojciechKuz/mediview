@@ -12,10 +12,15 @@ open class DicomDataElement<T>(hex1: UInt, hex2: UInt, vr: String, vl: UInt, val
     }
 
     override fun toString(): String = super.toString() + when(value) {
-        is ByteArray -> " " + if (vl <= tooLong) // isLengthDefined() // value.size <= 256
+        is ByteArray -> " " + when(true) {
+            (vl == 0u) -> ""
+            (vl <= tooLong) -> " \"" + value.toString(Charsets.US_ASCII) + "\""
+            else -> ""
+        }
+        /*is ByteArray -> " " + if (vl <= tooLong) // isLengthDefined() // value.size <= 256
                 " \"" + value.toString(Charsets.US_ASCII) + "\""
             else
-                ""
+                ""*/
         //"\n" + value.toHexString()
         is String -> " " + if (vl <= tooLong)
                 value
@@ -23,7 +28,14 @@ open class DicomDataElement<T>(hex1: UInt, hex2: UInt, vr: String, vl: UInt, val
                 ""
         //is UInt -> " 0x" + hexString(value)
         is UInt -> " " + value
-        is SQItemList -> {     // Can't infer type, thus *. But I know It's TagToDataMap
+        is SQItemList -> {
+            " " + if(value.isNotEmpty())
+                value.toString()
+            else
+                ""
+        }
+        is OBItemList -> {
+            println("OB Item List to String")
             " " + if(value.isNotEmpty())
                 value.toString()
             else
@@ -72,7 +84,3 @@ open class DicomDataElement<T>(hex1: UInt, hex2: UInt, vr: String, vl: UInt, val
 
 typealias DicomByteData = DicomDataElement<ByteArray>
 typealias TagToDataMap = Map<UInt, DicomDataElement<out Any>>
-
-fun DataMapToString(dataMap: TagToDataMap): String {
-    return ""
-}

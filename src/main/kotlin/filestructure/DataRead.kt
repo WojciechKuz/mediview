@@ -1,20 +1,19 @@
 package filestructure
 
-import DataType
 import DicomByteData
 import DicomCursor
 import DicomDataElement
 import DicomTag
+import OBItemList
 import SQItemList
 import TagToDataMap
 import determineDataType
-import filestructure.groups.*
 import tagAsUInt
 
-/** @param ignoreWarnings When reading tag with vr of `"  "` don't print any warning */
+/** @param ignoreWarnings When reading tag with vr of `"  "` don't print any warning. */
 class DataRead(private val ignoreWarnings: Boolean = false) {
 
-    /** Get Full Data Map */
+    /** Get Full Data Map. Control tags like (FFFE,E00D) are ignored */
     fun getFullDataMap(cursor: DicomCursor): TagToDataMap {
         return createDataMap(cursor).mapValues { (_, v) -> determineDataType(v) }
     }
@@ -65,8 +64,6 @@ class DataRead(private val ignoreWarnings: Boolean = false) {
             "SQ" -> {
                 if( stopTag.canReadValue(cursor) ) {
                     dataMap[stopTag.tag] = DicomByteData(stopTag, cursor.readNextByteField(stopTag.len))
-                    //dataMap[stopTag.tag] = interpretSQData(cursor.readNextByteField(stopTag.len))
-                    // TODO new function that will interpret what's inside sequence in place, then flatMap it.
                 }
             }
             "  " -> {
@@ -152,7 +149,7 @@ class DataRead(private val ignoreWarnings: Boolean = false) {
         return dataMapPart.toMap()
     }
 
-    private fun getItem(cursor: DicomCursor): TagToDataMap {
+    private fun getSQItem(cursor: DicomCursor): TagToDataMap {
         if(DicomTag.canReadTag(cursor) == 0u) {
             throw Exception("Can't get item. ByteArray too short to read tag.")
         }
@@ -161,23 +158,51 @@ class DataRead(private val ignoreWarnings: Boolean = false) {
         val subDataMap = DataRead(true).getFullDataMap(subCursor)
         return subDataMap
     }
-
     /** Read SQ's content. We don't interpret control characters, so it's safe to flatMap it. */
-    fun readSQData(sqData: DicomByteData): SQItemList {
+    private fun readSQData(sqData: DicomByteData): SQItemList {
         val subCursor = DicomCursor(sqData.value)   // cursor over SQ
         val subData = mutableListOf<TagToDataMap>()
 
         while(DicomTag.canReadTag(subCursor) != 0u) {
-            subData.add(getItem(subCursor))
+            subData.add(getSQItem(subCursor))
         }
         return SQItemList(subData)
     }
-
     /** For DicomByteData with tag SQ, get DicomDataElement with data type determined. */
     fun interpretSQData(sqData: DicomByteData): DicomDataElement<SQItemList> {
         return DicomDataElement(
             sqData.dicomTag,
             readSQData(sqData)
+        )
+    }
+
+    private fun getOBItem(cursor: DicomCursor): DicomByteData {
+        if(DicomTag.canReadTag(cursor) == 0u) {
+            throw Exception("Can't get item. ByteArray too short to read tag.")
+        }
+        val tag = cursor.readNextTag()
+        if(!tag.canReadValue(cursor)) {
+            throw Exception("Can't get item. ByteArray too short to read value.")
+        }
+        return DicomByteData(
+            tag,
+            cursor.readNextByteField(tag.len)
+        )
+    }
+    /** Read OB's content. */
+    private fun readOBData(obData: DicomByteData): OBItemList {
+        val subCursor = DicomCursor(obData.value)   // cursor over OB
+        val subData = mutableListOf<DicomByteData>()
+        while(DicomTag.canReadTag(subCursor) != 0u) {
+            subData.add(getOBItem(subCursor))
+        }
+        return OBItemList(subData)
+    }
+    /** interpret OB. Don't use on all OB tags, only on the ones, that you know have item tags inside them. */
+    fun interpretOBData(obData: DicomByteData): DicomDataElement<OBItemList> {
+        return DicomDataElement(
+            obData.dicomTag,
+            readOBData(obData)
         )
     }
 

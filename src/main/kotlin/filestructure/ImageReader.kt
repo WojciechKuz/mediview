@@ -1,8 +1,8 @@
 package filestructure
 
-import DicomByteData
 import DicomCursor
 import DicomDataElement
+import TagToDataMap
 import tagAsUInt
 
 object ImageReader {
