@@ -1,3 +1,4 @@
+
 import filestructure.*
 import filestructure.groups.AllTagsFromPDF
 import java.io.File
@@ -5,18 +6,6 @@ import kotlin.test.Test
 
 
 class TestDicomRead {
-
-    fun getCursor(): DicomCursor {
-        val cursor = DicomCursor(File("src/test/resources/IMG-0001-00001.dcm"))
-        return cursor
-    }
-    /** pass Header, put cursor at DataSet */
-    fun cursorAtDataSet(): DicomCursor {
-        val cursor = getCursor()
-        Header.skipPreamble(cursor)
-        Header.dicomPrefix(cursor)
-        return cursor
-    }
     fun strHex(u: UInt, pad: Int = 4): String {
 //        if (u != 0u)
 //            return "0x" + u.toString(16)
@@ -24,23 +13,9 @@ class TestDicomRead {
         return "0x" + u.toString(16).padStart(pad, '0') // same as "0x" + hexString(u)
     }
 
-    fun printTags(dataMap: TagToDataMap) {
-        val descriptionNotFoundList = mutableListOf<String>()
-        dataMap.forEach { (k, v) ->
-            println( v.toString() +
-                    when(k) {
-                        in DataSet.tagNames -> "\t -> " + DataSet.tagNames[k]
-                        in AllTagsFromPDF.allTagMap -> "\t -> " + AllTagsFromPDF.allTagMap[k]
-                        else -> "".also { descriptionNotFoundList.add(v.getStringTag()) }
-                    }
-            )
-        }
-        println("\nThese tag descriptions were not found:\n$descriptionNotFoundList")
-    }
-
     @Test
     fun testDicomRead() {
-        val cursor = getCursor()
+        val cursor = ReadHelp.getCursor()
         Header.filePreamble(cursor) //println(filePreamble(cursor))
         assert(Header.dicomPrefix(cursor) == "DICM")
         val infoLength = informationGroupLength(cursor)
@@ -53,7 +28,7 @@ class TestDicomRead {
     @Test
     fun testFindImgTag() {
         val imgTagID = 0x7FE00010u  // (7FE0,0010)
-        val cursor = getCursor().findTag(imgTagID)
+        val cursor = ReadHelp.getCursor().findTag(imgTagID)
         println("Looking for ${strHex(imgTagID)} tag.")
 
         if (cursor.hasReachedEnd()) {
@@ -68,7 +43,7 @@ class TestDicomRead {
 
     @Test
     fun testSiemensTagEnd() {
-        val cursor = cursorAtDataSet()
+        val cursor = ReadHelp.cursorAtDataSet()
         println("Scanning file IMG-0001-00001.dcm...")
         val dataMap = DataRead().getFullDataMap(cursor)
         val siemensTag = tagAsUInt("[0008 0070]")
@@ -88,17 +63,17 @@ class TestDicomRead {
 
     @Test
     fun testPrintAllFileTags() {
-        val cursor = cursorAtDataSet()
+        val cursor = ReadHelp.cursorAtDataSet()
         println("Scanning file IMG-0001-00001.dcm...")
         val dataMap = DataRead().getFullDataMap(cursor) //dataMapUntilImage(cursor)
         println("Reading finished. Print...")
-        printTags(dataMap)
+        ReadHelp.printTags(dataMap)
     }
 
 
     @Test
     fun printAllVRs() {
-        val cursor = cursorAtDataSet()
+        val cursor = ReadHelp.cursorAtDataSet()
         val set = mutableSetOf<String>()
         DataRead().getFullDataMap(cursor).forEach { (k, v) ->
             if(v.vr !in set) {
