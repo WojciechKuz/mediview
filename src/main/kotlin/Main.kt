@@ -2,11 +2,12 @@ import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.painter.BitmapPainter
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
@@ -40,9 +41,19 @@ fun App(imgsize: Int, layout3inRow: Boolean = false) {
 }
 
 @Composable
+fun getPainter(fileName: String): Painter {
+    val imageBitmap = fileToImageBitmap(fileName)
+    if (imageBitmap != null) {
+        return BitmapPainter( imageBitmap )
+    }
+    return painterResource("imagenotfound512.png")
+}
+
+@Composable
 @Preview
-fun image(resourceName: String, imgsize: Int, color: Color) {
-    Image(painterResource(resourceName), "opis",
+fun image(painter: Painter, imgsize: Int, color: Color) {
+    Image(
+        painter, "opis",
         modifier = Modifier.width(imgsize.dp).height(imgsize.dp).border(1.dp, color)
     )
 }
@@ -51,17 +62,25 @@ fun image(resourceName: String, imgsize: Int, color: Color) {
 @Preview
 fun layout2x2(imgsize: Int) {
     Column(modifier = Modifier.width((imgsize*2).dp).height((imgsize*2).dp)) {
+        var imageName by remember { mutableStateOf("") }
+        var filePicked by remember { mutableStateOf(false) } // UI redraw is triggered when value changes
+        if (!filePicked) {
+            imageName = pickFile()
+            println("\"$imageName\" chosen.")
+            filePicked = true
+        }
+        else { println("LaunchedEffect() again") }
         Row(modifier = Modifier.fillMaxWidth()) {
-            Image(painterResource("topBridgeEnter.png"), "opis",
+            Image(getPainter(imageName), "opis",
                 modifier = Modifier.width(imgsize.dp).height(imgsize.dp).border(1.dp, Color.Red)
                 //modifier = Modifier.drawBehind {}
             )
-            Image(painterResource("topBridgeEnter.png"), "opis",
+            Image(getPainter(imageName), "opis",
                 modifier = Modifier.width(imgsize.dp).height(imgsize.dp).border(1.dp, Color.Green)
             )
         }
         Row(modifier = Modifier.fillMaxWidth()) {
-            Image(painterResource("topBridgeEnter.png"), "opis",
+            Image(getPainter(imageName), "opis",
                 modifier = Modifier.width(imgsize.dp).height(imgsize.dp).border(1.dp, Color.Blue)
             )
             uiSliders(imgsize, false)
@@ -73,7 +92,7 @@ fun layout2x2(imgsize: Int) {
 @Preview
 fun layout3plus1(imgsize: Int) {
     Column(modifier = Modifier.width((imgsize*3).dp).height((imgsize+60).dp)) {
-        var imageName by remember { mutableStateOf("topBridgeEnter.png") } // UWAGA! Wybór pliku działa tylko z folderu resources!
+        var imageName by remember { mutableStateOf("") }
         var filePicked by remember { mutableStateOf(false) }
         if (!filePicked) {
             imageName = pickFile()
@@ -83,9 +102,9 @@ fun layout3plus1(imgsize: Int) {
         else { println("LaunchedEffect() again") }
         Box {
             Row(modifier = Modifier.fillMaxWidth()) {
-                image(imageName, imgsize, Color.Red)
-                image(imageName, imgsize, Color.Green)
-                image(imageName, imgsize, Color.Blue)
+                image(getPainter(imageName), imgsize, Color.Red)
+                image(getPainter(imageName), imgsize, Color.Green)
+                image(getPainter(imageName), imgsize, Color.Blue)
             }
         }
         Box(modifier = Modifier.fillMaxSize()) { uiSliders(imgsize, true) }
@@ -96,7 +115,7 @@ fun pickFile(): String {
     val dialog = FileDialog(null as Frame?, "Select File to Open", FileDialog.LOAD)
     dialog.isVisible = true
     //return File(dialog.directory, dialog.file).toString()
-    return dialog.file
+    return dialog.directory + dialog.file
 }
 
 @Composable
