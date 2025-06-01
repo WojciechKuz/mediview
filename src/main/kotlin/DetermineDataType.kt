@@ -58,7 +58,23 @@ fun determineDataType(byteData: DicomByteData): DicomDataElement<out Any> {
         //"OL" -> {} 	// [0x4F4CU] Other Long
         //"OD" -> {} 	// [0x4F44U] Other Double
         //"OF" -> {} 	// [0x4F46U] Other Float
-        "OW" -> { byteData } 	// [0x4F57U] Other Word
+
+        "OW" -> { // currently same as OB, but OW should be affected by Byte Ordering
+            if(byteData.isLengthDefined() /*&& byteData.vl <= DicomDataElement.tooLong*/) {
+                //byteData.valueAsHexStr()
+                if(byteData.len > 4u) {
+                    println("Long OB")
+                    DataRead().interpretOBData(byteData)
+                }
+                else {
+                    println("Short OB")
+                    byteData.valueAsHexStr()
+                }
+            }
+            else {
+                byteData // shouldn't print in that case
+            }
+        } 	// [0x4F57U] Other Word
         "PN" -> {
             byteData.valueAsString()
         } 	// [0x504EU] Person Name

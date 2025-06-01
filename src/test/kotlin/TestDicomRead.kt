@@ -6,12 +6,7 @@ import kotlin.test.Test
 
 
 class TestDicomRead {
-    fun strHex(u: UInt, pad: Int = 4): String {
-//        if (u != 0u)
-//            return "0x" + u.toString(16)
-//        return "0x0000"
-        return "0x" + u.toString(16).padStart(pad, '0') // same as "0x" + hexString(u)
-    }
+    private fun strHex(u: UInt, pad: Int = 4) = ReadHelp.strHex(u, pad)
 
     @Test
     fun testDicomRead() {

@@ -10,7 +10,8 @@ import TagToDataMap
 import determineDataType
 import tagAsUInt
 
-/** @param ignoreWarnings When reading tag with vr of `"  "` don't print any warning. */
+/** High level dicom reading functions.
+ * @param ignoreWarnings When reading tag with vr of `"  "` don't print any warning. */
 class DataRead(private val ignoreWarnings: Boolean = false) {
 
     /** Get Full Data Map. Control tags like (FFFE,E00D) are ignored */
@@ -40,6 +41,7 @@ class DataRead(private val ignoreWarnings: Boolean = false) {
 
         return true
     }
+
     /** Tags with VR's that require special processing */
     private val specialVRs: List<String> = listOf("SQ", "OB", "  ")
 
@@ -96,8 +98,9 @@ class DataRead(private val ignoreWarnings: Boolean = false) {
             }
         }
     }
+
     /** Call for OB of undefined length. Will determine the length and set ByteArray */
-    private fun determineOBLength(cursor: DicomCursor, obTag: DicomTag, createUntil: (DicomTag) -> Boolean  = {false}): DicomByteData {
+    fun determineOBLength(cursor: DicomCursor, obTag: DicomTag, createUntil: (DicomTag) -> Boolean  = {false}): DicomByteData {
         // tag already read, now read value
         if(DicomTag.canReadTag(cursor) != 0u) {
             val prevCursor = cursor.cursor
@@ -144,7 +147,7 @@ class DataRead(private val ignoreWarnings: Boolean = false) {
         do {
             dataMapPart += cursor.readAllTags { createUntil(it) || internalStopCondition(it) }.associateBy { it.tag }
         }
-        while (whyStopped(cursor, createUntil, dataMapPart))
+        while(whyStopped(cursor, createUntil, dataMapPart))
 
         return dataMapPart.toMap()
     }
@@ -206,9 +209,9 @@ class DataRead(private val ignoreWarnings: Boolean = false) {
         )
     }
 
-    /**
-     * @param imgInfo Map of tag to data containing information about image */
-    fun readImageData(cursor: DicomCursor, imgInfo: Map<UInt, DicomByteData>) = ImageReader.skipImageData(cursor, imgInfo)
+//    /**
+//     * @param imgInfo Map of tag to data containing information about image */
+//    fun readImageData(cursor: DicomCursor, imgInfo: Map<UInt, DicomByteData>) = ImageReader.skipImageData(cursor, imgInfo)
 
     //companion object {
     //}

@@ -15,7 +15,6 @@ import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
 import java.awt.*
-import java.io.File
 
 
 @Composable
@@ -38,6 +37,15 @@ fun App(imgsize: Int, layout3inRow: Boolean = false) {
             layout2x2(imgsize)
         }
     }
+}
+
+@Composable
+fun getPainterByteArray(bytes: ByteArray): Painter {
+    val imageBitmap = byteArrayToImageBitmap(bytes)
+    if (imageBitmap != null) {
+        return BitmapPainter( imageBitmap )
+    }
+    return painterResource("imagenotfound512.png")
 }
 
 @Composable

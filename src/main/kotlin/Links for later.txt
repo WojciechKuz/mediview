@@ -22,4 +22,11 @@ LUT Encoding. slope, window center
 PDF
 -> https://www.konicaminolta.com/content/download/1148/8234/CS-3%20DICOM%203.0%20Conformance%20Statement.pdf
 
+General about dicom
+-> https://radsource.us/understanding-dicom-what-is-the-dicom-file-format/#:~:text=DICOM%20files%20use%20a%20specific,relevant%20details%20are%20stored%20together.
+
+Dicom pixel data
+-> https://dicom.nema.org/medical/dicom/current/output/html/part05.html#chapter_8
+
+
 // kotlin list to map: associate, associateBy, associateTo

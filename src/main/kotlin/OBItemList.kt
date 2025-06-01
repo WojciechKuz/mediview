@@ -23,7 +23,8 @@ class OBItemList(val list: List<DicomByteData>): List<DicomByteData> by list {
             }
             sb.append("\n")
         }
-        sb.deleteCharAt(sb.length - 1) // removes last '\n'
+        if(sb.isNotEmpty())
+            sb.deleteCharAt(sb.length - 1) // removes last '\n'
         //sb.deleteCharAt(sb.length - 1) // removes last ','
         return "{\n$sb}"
     }

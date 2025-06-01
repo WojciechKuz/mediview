@@ -1,12 +1,10 @@
 package filestructure
 
 import DicomCursor
-import java.nio.ByteOrder
-
-
-val endianness: ByteOrder = ByteOrder.LITTLE_ENDIAN
 
 // reading tags start here
+
+// Formerly called "readMeta.kt"
 
 fun informationGroupLength(cursor: DicomCursor): UInt {
     val tag = cursor.readNextTag()
@@ -14,8 +12,3 @@ fun informationGroupLength(cursor: DicomCursor): UInt {
     println("$tag info group length: $infoGroupLength")
     return infoGroupLength
 }
-
-// TODO dicom image (tag 7fe0 0010) to BitmapPainter (Kt Compose)
-
-// zTODO universal tag reading function.
-// maybe only one special case for information version, which has 2 byte offset.

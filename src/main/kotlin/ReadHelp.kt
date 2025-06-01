@@ -7,7 +7,7 @@ import java.io.File
 
 /** Easily open DICOM File. Use for example in tests. */
 object ReadHelp {
-    private val defaultPath = "src/test/resources/IMG-0001-00001.dcm"
+    val defaultPath = "src/test/resources/IMG-0001-00001.dcm"
 
     /** Open system file picker */
     fun pickDicom(): String {
@@ -43,5 +43,12 @@ object ReadHelp {
         if (descriptionNotFoundList.isNotEmpty()) {
             println("\nThese tag descriptions were not found:\n$descriptionNotFoundList")
         }
+    }
+
+    fun strHex(u: UInt, pad: Int = 4): String {
+//        if (u != 0u)
+//            return "0x" + u.toString(16)
+//        return "0x0000"
+        return "0x" + u.toString(16).padStart(pad, '0') // same as "0x" + hexString(u)
     }
 }
