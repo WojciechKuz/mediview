@@ -85,7 +85,7 @@ class DicomCursor(val bytes: ByteArray, position: UInt = 0u): Comparable<UInt> {
             if(!nextTag.canReadValue(this))
                 break
             if(readUntil(nextTag)) {
-                println("Stopped reading for tag $nextTag")
+                //println("Stopped reading for tag $nextTag")
                 cursor = cursorBeforeTag
                 break
             }

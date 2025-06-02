@@ -31,6 +31,11 @@ object ImageReader {
     }
 
     fun readImageData(cursor: DicomCursor, imgInfo: TagToDataMap) {
+        readImageData(imgInfo)
+        println("Cursor moved to ${cursor.cursor}, file length ${cursor.bytes.size}, can${if(cursor.hasReachedEnd()) "'t" else ""} read any more\n")
+    }
+
+    fun readImageData(imgInfo: TagToDataMap) {
         val rows = imgInfo.getTag("(0028,0010)").value as UInt
         val columns = imgInfo.getTag("(0028,0011)").value as UInt
         val bitsAllocated = imgInfo.getTag("(0028,0100)").value as UInt
@@ -38,15 +43,7 @@ object ImageReader {
         val highBit = imgInfo.getTag("(0028,0102)").value as UInt
         val pixelRepresentation = imgInfo.getTag("(0028,0103)").value as UInt
         val pixelData = getPixelData(imgInfo)
-
-        val skipBy = rows * columns * (bitsAllocated / 8u) / 2u // FIXME 512*512*2 262144 != official 275442
-        println("Skip image - $skipBy Bytes")
-        cursor.readNextTag()
-        val cursorBeforeMove = cursor.cursor
-        cursor.moveBy(
-            skipBy
-        )
-        println("Cursor moved from $cursorBeforeMove to ${cursor.cursor}, file length ${cursor.bytes.size}, can${if(cursor.hasReachedEnd()) "'t" else ""} read any more\n")
+        println("Info about image:\n rows $rows, columns $columns,\n bits alloc $bitsAllocated, bits stored $bitsStored, high bit $highBit,\n pixelRepresentation: $pixelRepresentation")
     }
 }
 

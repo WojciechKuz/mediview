@@ -36,11 +36,11 @@ fun determineDataType(byteData: DicomByteData): DicomDataElement<out Any> {
             if(byteData.isLengthDefined() /*&& byteData.vl <= DicomDataElement.tooLong*/) {
                 //byteData.valueAsHexStr()
                 if(byteData.len > 4u) {
-                    println("Long OB")
+                    //println("Long OB")
                     DataRead().interpretOBData(byteData)
                 }
                 else {
-                    println("Short OB")
+                    //println("Short OB")
                     byteData.valueAsHexStr()
                 }
             }
@@ -63,11 +63,11 @@ fun determineDataType(byteData: DicomByteData): DicomDataElement<out Any> {
             if(byteData.isLengthDefined() /*&& byteData.vl <= DicomDataElement.tooLong*/) {
                 //byteData.valueAsHexStr()
                 if(byteData.len > 4u) {
-                    println("Long OB")
+                    //println("Long OW")
                     DataRead().interpretOBData(byteData)
                 }
                 else {
-                    println("Short OB")
+                    //println("Short OW")
                     byteData.valueAsHexStr()
                 }
             }

@@ -1,10 +1,7 @@
 package filestructure
 
 import DataType
-import filestructure.groups.DeviceGroup
-import filestructure.groups.GroupBase
-import filestructure.groups.PixelGroup
-import filestructure.groups.StudyGroup
+import filestructure.groups.*
 
 object DataSet: GroupBase() {
     val tagNames: Map<UInt, DataType> = listOf(
@@ -17,5 +14,9 @@ object DataSet: GroupBase() {
         "(FFFE,E000) Seq Item" * "  ",
         "(FFFE,E00D) Seq Item Delimiter" * "  ",
         "(FFFE,E0DD) Seq Delimiter" * "  ",
-    ).associateBy { it.tag } + PixelGroup.pixelDataTagNames + StudyGroup.dataTagNames + DeviceGroup.deviceDataTagNames
+    ).associateBy { it.tag } +
+            PixelGroup.pixelDataTagNames +
+            StudyGroup.dataTagNames +
+            DeviceGroup.deviceDataTagNames +
+            OtherGroup.otherTagNames
 }

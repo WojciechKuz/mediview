@@ -5,6 +5,7 @@ import androidx.compose.ui.window.rememberWindowState
 import androidx.compose.ui.window.application
 import filestructure.DataRead
 import filestructure.Header
+import filestructure.ImageReader
 import filestructure.informationGroupLength
 import java.awt.FileDialog
 import java.awt.Frame
@@ -32,9 +33,8 @@ class TestAnyDicom {
     @Test
     fun testPrintAllFileTags() {
         val cursor = ReadHelp.cursorAtDataSet(pickDicom())
-        println("Scanning file...")
         val dataMap = DataRead().getFullDataMap(cursor) //dataMapUntilImage(cursor)
-        println("Reading finished. Print...")
+        println("Reading finished. Print content...")
         ReadHelp.printTags(dataMap)
     }
 
