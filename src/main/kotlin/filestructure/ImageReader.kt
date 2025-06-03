@@ -42,8 +42,18 @@ object ImageReader {
         val bitsStored = imgInfo.getTag("(0028,0101)").value as UInt
         val highBit = imgInfo.getTag("(0028,0102)").value as UInt
         val pixelRepresentation = imgInfo.getTag("(0028,0103)").value as UInt
+        val photometricInterpretation = imgInfo.getTag("(0028,0004)").value as String
+        val samplesPerPixel = imgInfo.getTag("(0028,0002)").value as UInt
         val pixelData = getPixelData(imgInfo)
-        println("Info about image:\n rows $rows, columns $columns,\n bits alloc $bitsAllocated, bits stored $bitsStored, high bit $highBit,\n pixelRepresentation: $pixelRepresentation")
+        println(
+            """Info about image:
+            - rows $rows, columns $columns,
+            - bits alloc $bitsAllocated, bits stored $bitsStored, high bit $highBit,
+            - pixelRepresentation: $pixelRepresentation,
+            - photometricInterpretation: $photometricInterpretation,
+            - samplesPerPixel: $samplesPerPixel
+            """.trimMargin()
+        )
     }
 }
 

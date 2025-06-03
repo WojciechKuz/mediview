@@ -6,6 +6,7 @@ import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.res.painterResource
@@ -14,8 +15,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
+/*
+import coil3.PlatformContext
+import coil3.request.ImageRequest
+import coil3.size.Size
+import coil3.compose.LocalPlatformContext
+*/
 import java.awt.*
-
+import java.io.ByteArrayInputStream
 
 @Composable
 @Preview
@@ -56,6 +63,9 @@ fun getPainter(fileName: String): Painter {
     }
     return painterResource("imagenotfound512.png")
 }
+
+
+
 
 @Composable
 @Preview

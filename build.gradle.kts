@@ -12,6 +12,7 @@ version = "1.0-SNAPSHOT"
 repositories {
     mavenCentral()
     maven("https://maven.pkg.jetbrains.space/public/p/compose/dev")
+    //maven("https://packages.jetbrains.team/maven/p/skija/maven")
     google()
 }
 
@@ -22,6 +23,9 @@ dependencies {
     // With compose.desktop.common you will also lose @Preview functionality
     implementation(compose.desktop.currentOs)
     testImplementation("org.jetbrains.kotlin:kotlin-test")
+    //api("org.jetbrains.skija:${"skija-windows"}:${"0.93.6"}")
+    //implementation("io.coil-kt.coil3:coil-compose:3.2.0")
+    implementation("com.twelvemonkeys.imageio:imageio-jpeg:3.12.0") // Yay! twelveMonkeys works 😄
 }
 
 compose.desktop {
