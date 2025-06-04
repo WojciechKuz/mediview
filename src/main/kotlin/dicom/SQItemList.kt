@@ -1,4 +1,4 @@
-
+package dicom
 /** Use in place of List<TagToDataMap>  */
 class SQItemList(val list: List<TagToDataMap>): List<TagToDataMap> by list {
 

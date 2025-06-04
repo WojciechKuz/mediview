@@ -1,3 +1,5 @@
+package dicom
+
 import java.nio.ByteOrder
 
 /** Read string tag formatted like `(0028,0100)` or `[0028 0100]` to uint */

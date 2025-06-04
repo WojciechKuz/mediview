@@ -1,6 +1,6 @@
-package filestructure
+package dicom.filestructure
 
-import DicomCursor
+import dicom.DicomCursor
 
 // reading tags start here
 

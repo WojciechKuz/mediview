@@ -1,4 +1,4 @@
-
+package dicom
 /** Throw when file is too short to read some value.
  * @param what What was supposed to be read.
  * Example: "File is too short to read **preamble**." */

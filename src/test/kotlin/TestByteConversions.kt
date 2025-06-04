@@ -1,8 +1,7 @@
-import filestructure.groups.GroupBase
-import filestructure.Header
-import filestructure.informationGroupLength
-import java.io.File
+import dicom.*
+import dicom.filestructure.groups.GroupBase
 import kotlin.test.Test
+import kotlin.toUInt
 
 class TestByteConversions {
     fun strHex(u: UInt, pad: Int = 4): String {

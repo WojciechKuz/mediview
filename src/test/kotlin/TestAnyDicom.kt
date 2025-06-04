@@ -1,4 +1,3 @@
-import androidx.compose.foundation.Image
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.painter.BitmapPainter
@@ -6,13 +5,16 @@ import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.rememberWindowState
 import androidx.compose.ui.window.application
-import filestructure.DataRead
-import filestructure.Header
-import filestructure.ImageReader
-import filestructure.informationGroupLength
+import dicom.DicomTag
+import dicom.byteArrayToFile
+import dicom.byteArrayToImageBitmap
+import dicom.toHexString
+import dicom.filestructure.DataRead
+import dicom.filestructure.Header
+import dicom.filestructure.ImageReader
+import dicom.filestructure.informationGroupLength
 import java.io.File
 import javax.imageio.IIOException
-import javax.imageio.ImageReadParam
 import kotlin.test.Test
 
 // Warning! some tests which open a window might end as failed when closing a window.

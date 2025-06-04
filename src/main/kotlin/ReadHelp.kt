@@ -1,6 +1,8 @@
-import filestructure.DataSet
-import filestructure.Header
-import filestructure.groups.AllTagsFromPDF
+import dicom.DicomCursor
+import dicom.TagToDataMap
+import dicom.filestructure.DataSet
+import dicom.filestructure.Header
+import dicom.filestructure.groups.AllTagsFromPDF
 import java.awt.FileDialog
 import java.awt.Frame
 import java.io.File

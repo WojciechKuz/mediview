@@ -1,6 +1,6 @@
-package filestructure.groups
+package dicom.filestructure.groups
 
-import DataType
+import dicom.DataType
 
 object AllTagsFromPDF {
     /** Copied from table in documentation pdf, processed in Notepad++. Finally, pasted here.  */

@@ -1,3 +1,5 @@
+package dicom
+
 /** Stores tag of the data field.
  *  readTag() reads tag from ByteArray.
  *  First in dicom file is hex2, then hex1

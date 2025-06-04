@@ -1,8 +1,7 @@
-
+package dicom
 
 //import android.graphics.BitmapFactory // android only
 //import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.toComposeImageBitmap
 import java.io.ByteArrayInputStream

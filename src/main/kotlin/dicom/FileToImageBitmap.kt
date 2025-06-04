@@ -1,3 +1,5 @@
+package dicom
+
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.toComposeImageBitmap
 import java.io.File

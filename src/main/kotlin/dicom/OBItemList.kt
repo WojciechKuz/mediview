@@ -1,4 +1,4 @@
-
+package dicom
 // For when List<DicomByteData> Can't infer inner type.
 // List<*> won't do the job, thus separate class OBItemList.
 

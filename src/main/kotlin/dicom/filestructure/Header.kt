@@ -1,8 +1,8 @@
-package filestructure
+package dicom.filestructure
 
-import DicomCursor
-import DicomCursorException
-import toU
+import dicom.DicomCursor
+import dicom.DicomCursorException
+import dicom.toU
 
 object Header {
     const val preambleLength = 128

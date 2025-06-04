@@ -1,6 +1,6 @@
-package filestructure.groups
+package dicom.filestructure.groups
 
-import DataType
+import dicom.DataType
 
 object OtherGroup: GroupBase() {
     val otherTagNames: Map<UInt, DataType> = listOf(

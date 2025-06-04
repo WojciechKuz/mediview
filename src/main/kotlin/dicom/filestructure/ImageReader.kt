@@ -1,11 +1,11 @@
-package filestructure
+package dicom.filestructure
 
-import DicomByteData
-import DicomCursor
-import DicomDataElement
-import OBItemList
-import TagToDataMap
-import tagAsUInt
+import dicom.DicomByteData
+import dicom.DicomCursor
+import dicom.DicomDataElement
+import dicom.OBItemList
+import dicom.TagToDataMap
+import dicom.tagAsUInt
 
 object ImageReader {
     private fun TagToDataMap.getTag(tag: String): DicomDataElement<out Any> {

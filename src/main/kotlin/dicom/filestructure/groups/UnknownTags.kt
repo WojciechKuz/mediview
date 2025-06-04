@@ -1,4 +1,4 @@
-package filestructure.groups
+package dicom.filestructure.groups
 
 object UnknownTags {
 }

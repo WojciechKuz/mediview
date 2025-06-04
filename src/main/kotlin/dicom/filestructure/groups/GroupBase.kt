@@ -1,6 +1,6 @@
-package filestructure.groups
+package dicom.filestructure.groups
 
-import DataType
+import dicom.DataType
 
 open class GroupBase {
 

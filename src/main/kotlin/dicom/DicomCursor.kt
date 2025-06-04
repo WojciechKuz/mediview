@@ -1,3 +1,5 @@
+package dicom
+
 import java.io.File
 
 
@@ -73,7 +75,8 @@ class DicomCursor(val bytes: ByteArray, position: UInt = 0u): Comparable<UInt> {
     }
 
     /** Reads next 8 bytes as Dicom tag. Increases cursor. */
-    fun readNextTag() = DicomTag.readTag(this) // cursor is increased underneath, cuz it's implemented with readNextInt/Str
+    fun readNextTag() =
+        DicomTag.readTag(this) // cursor is increased underneath, cuz it's implemented with readNextInt/Str
 
     /** Read all tags and values starting at cursor position and until the end. Increases cursor, sets it to the end.
      * @param readUntil optional expression that can stop reading earlier. Leaves cursor right before tag, for which readUntil returns true. */

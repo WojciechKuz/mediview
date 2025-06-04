@@ -1,4 +1,4 @@
-
+package dicom
 /** Stores tag and value. Extends [DicomTag]. */
 open class DicomDataElement<T>(hex1: UInt, hex2: UInt, vr: String, vl: UInt, val value: T): DicomTag(hex1, hex2, vr, vl) {
     constructor(dicomTag: DicomTag, value: T): this(dicomTag.tagPt1, dicomTag.tagPt2, dicomTag.vr, dicomTag.vl, value)

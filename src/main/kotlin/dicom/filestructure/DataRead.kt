@@ -1,14 +1,14 @@
-package filestructure
+package dicom.filestructure
 
-import DicomByteData
-import DicomCursor
-import DicomDataElement
-import DicomTag
-import OBItemList
-import SQItemList
-import TagToDataMap
-import determineDataType
-import tagAsUInt
+import dicom.DicomByteData
+import dicom.DicomCursor
+import dicom.DicomDataElement
+import dicom.DicomTag
+import dicom.OBItemList
+import dicom.SQItemList
+import dicom.TagToDataMap
+import dicom.determineDataType
+import dicom.tagAsUInt
 
 /** High level dicom reading functions.
  * @param ignoreWarnings When reading tag with vr of `"  "` don't print any warning. */

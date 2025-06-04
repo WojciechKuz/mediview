@@ -1,4 +1,4 @@
-
+package dicom
 class DataType(tag: String, val description: String, vararg vrs: String) {
     val tag: UInt = tagAsUInt(tag)
     val vrs: List<String> = vrs.asList()

@@ -1,7 +1,10 @@
 
-import filestructure.*
-import filestructure.groups.AllTagsFromPDF
-import java.io.File
+import dicom.DicomTag
+import dicom.filestructure.DataRead
+import dicom.filestructure.Header
+import dicom.filestructure.informationGroupLength
+import dicom.tagAsUInt
+import dicom.toHexString
 import kotlin.test.Test
 
 

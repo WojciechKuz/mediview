@@ -1,4 +1,6 @@
-import filestructure.DataRead
+package dicom
+
+import dicom.filestructure.DataRead
 
 
 fun determineDataType(byteData: DicomByteData): DicomDataElement<out Any> {

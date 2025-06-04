@@ -1,6 +1,6 @@
-package filestructure.groups
+package dicom.filestructure.groups
 
-import DataType
+import dicom.DataType
 
 /** 0028 group regarding image data */
 object PixelGroup: GroupBase() {

@@ -1,4 +1,4 @@
-
+package dicom
 /** get sub-array copy */
 operator fun ByteArray.get(a: Int, b: Int): ByteArray = this.copyOfRange(a, b)
 /** get sub-array copy */

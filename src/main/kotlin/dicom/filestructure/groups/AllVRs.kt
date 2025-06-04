@@ -1,4 +1,4 @@
-package filestructure.groups
+package dicom.filestructure.groups
 
 object AllVRs {
     val AE = "AE" 	// [0x4145U] Application Entity
