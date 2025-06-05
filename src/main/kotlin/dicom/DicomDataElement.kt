@@ -1,5 +1,8 @@
 package dicom
-/** Stores tag and value. Extends [DicomTag]. */
+/** Stores tag and value. Extends [DicomTag].
+ *
+ * ⚠ Use `valueAsSomeType()` methods only when value is ByteArray.
+ * When type of value is already known, use `as SomeType` instead. */
 open class DicomDataElement<T>(hex1: UInt, hex2: UInt, vr: String, vl: UInt, val value: T): DicomTag(hex1, hex2, vr, vl) {
     constructor(dicomTag: DicomTag, value: T): this(dicomTag.tagPt1, dicomTag.tagPt2, dicomTag.vr, dicomTag.vl, value)
 
@@ -44,6 +47,7 @@ open class DicomDataElement<T>(hex1: UInt, hex2: UInt, vr: String, vl: UInt, val
         else -> " " + value.toString()
     }
 
+    /** ⚠ Use this method only when value is ByteArray. */
     fun valueAsString(): DicomDataElement<String> {
         if (value !is ByteArray) {
             throw IllegalArgumentException("DicomDataElement.value is not a ByteArray. Only ByteArrays can be converted to other types.")
@@ -56,6 +60,7 @@ open class DicomDataElement<T>(hex1: UInt, hex2: UInt, vr: String, vl: UInt, val
         return DicomDataElement(dicomTag, str)
     }
 
+    /** ⚠ Use this method only when value is ByteArray. */
     fun valueAsInt(): DicomDataElement<Int> {
         if (value !is ByteArray) {
             throw IllegalArgumentException("DicomDataElement.value is not a ByteArray. Only ByteArrays can be converted to other types.")
@@ -64,6 +69,7 @@ open class DicomDataElement<T>(hex1: UInt, hex2: UInt, vr: String, vl: UInt, val
         return DicomDataElement(dicomTag, -1099)
     }
 
+    /** ⚠ Use this method only when value is ByteArray. */
     fun valueAsUInt(): DicomDataElement<UInt> {
         if (value !is ByteArray) {
             throw IllegalArgumentException("DicomDataElement.value is not a ByteArray. Only ByteArrays can be converted to other types.")
@@ -73,6 +79,7 @@ open class DicomDataElement<T>(hex1: UInt, hex2: UInt, vr: String, vl: UInt, val
         return DicomDataElement(dicomTag, uint)
     }
 
+    /** ⚠ Use this method only when value is ByteArray. */
     fun valueAsHexStr(): DicomDataElement<String> {
         if (value !is ByteArray) {
             throw IllegalArgumentException("DicomDataElement.value is not a ByteArray. Only ByteArrays can be converted to other types.")

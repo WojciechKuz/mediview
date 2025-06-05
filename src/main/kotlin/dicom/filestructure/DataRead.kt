@@ -19,6 +19,10 @@ class DataRead(private val ignoreWarnings: Boolean = false) {
         return createDataMap(cursor).mapValues { (_, v) -> determineDataType(v) }
     }
 
+    fun getPartialDataMap(cursor: DicomCursor, selectedTags: List<UInt>): TagToDataMap {
+        return mapOfCertainTags(cursor, selectedTags).mapValues { (_, v) -> determineDataType(v) }
+    }
+
     /** While condition. Has side effect of writing to a map
      * @return false if stopped because of user's condition, or reached end.
      * True if stopped because of internal stop condition */
@@ -148,6 +152,41 @@ class DataRead(private val ignoreWarnings: Boolean = false) {
             dataMapPart += cursor.readAllTags { createUntil(it) || internalStopCondition(it) }.associateBy { it.tag }
         }
         while(whyStopped(cursor, createUntil, dataMapPart))
+
+        return dataMapPart.toMap()
+    }
+
+    /** Do not create full data map, only map of selected tags.
+     * @param tagsAreSorted if tags in list are ordered as in dicom file */
+    private fun mapOfCertainTags(
+        cursor: DicomCursor, selectedTags: List<UInt>, tagsAreSorted: Boolean = false
+    ): Map<UInt, DicomByteData> {
+        val dataMapPart: MutableMap<UInt, DicomByteData> = mutableMapOf()
+
+        val beggining = cursor.cursor
+        var maxCursor = cursor.cursor
+        for(tag in selectedTags) {
+            if(!tagsAreSorted) {
+                cursor.restoreCursorPosition(beggining)
+            }
+            val atTag = cursor.findTag(tag)
+            if (atTag.hasReachedEnd()) {
+                println("Tag ${ReadHelp.strHex(tag, pad = 8)} was not found")
+                //return dataMapPart.toMap()
+                continue
+            }
+            val foundTag = atTag.readNextTag()
+            if(!foundTag.canReadValue(atTag)) {
+                println("Can't read the value at tag ${ReadHelp.strHex(tag, pad = 8)}")
+                //return dataMapPart.toMap()
+                continue
+            }
+            dataMapPart[foundTag.tag] = DicomByteData(foundTag, atTag.safeReadNextByteField(foundTag))
+            if(maxCursor < cursor.cursor) {
+                maxCursor = cursor.cursor
+            }
+        }
+        cursor.restoreCursorPosition(maxCursor)
 
         return dataMapPart.toMap()
     }

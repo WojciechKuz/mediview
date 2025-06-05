@@ -30,12 +30,13 @@ object Header {
         cursor.moveBy(preambleLength)
     }
 
-    fun dicomPrefix(cursor: DicomCursor): String {
+    fun dicomPrefix(cursor: DicomCursor, printDICM: Boolean = false): String {
         if (!cursor.hasNext(dicomPrefixLen))
             throw DicomCursorException("prefix")
 
         val prefix = cursor.readNextStr(dicomPrefixLen)
-        println(prefix)
+        if(printDICM)
+            println(prefix)
         return prefix
     }
 }

@@ -10,8 +10,8 @@ import dicom.tagAsUInt
 object ImageReader {
     private fun TagToDataMap.getTag(tag: String): DicomDataElement<out Any> {
         val utag = tagAsUInt(tag)
-        if(this.containsKey(utag)) {
-            return this[utag]!!
+        if(this@getTag.containsKey(utag)) {
+            return this@getTag[utag]!!
         }
         throw Exception("Tag $tag not found in TagToDataMap")
     }
