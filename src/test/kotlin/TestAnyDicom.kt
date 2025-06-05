@@ -31,7 +31,7 @@ class TestAnyDicom {
     fun testDicomRead() {
         val cursor = getCursor(pickDicom())
         Header.filePreamble(cursor)
-        assert(Header.dicomPrefix(cursor) == "DICM")
+        assert(Header.dicomPrefix(cursor, true) == "DICM")
         val infoLength = informationGroupLength(cursor)
         println(cursor.readNextByteField(16).toHexString())
         println(cursor.readNextByteField(16).toHexString())

@@ -17,6 +17,18 @@ object ReadHelp {
         dialog.isVisible = true
         return dialog.directory + dialog.file
     }
+    /** Open system file picker. Get a pair of directory and file */
+    fun pickDirAndDicom(): Pair<String, String> {
+        val dialog = FileDialog(null as Frame?, "Select DICOM File to Open", FileDialog.LOAD)
+        dialog.isVisible = true
+        return Pair(dialog.directory, dialog.file)
+    }
+    fun listFilesInDir(dir: String): List<String> {
+        val dirF = File(dir)
+        val fList = dirF.listFiles()?: return emptyList()
+        return fList.map { it.name }
+    }
+
     /** Get DICOM file cursor for specified file */
     fun getCursor(path: String = defaultPath): DicomCursor {
         val cursor = DicomCursor(File(path))

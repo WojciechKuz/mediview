@@ -163,6 +163,8 @@ fun whatsWrongWithSlidersExample() {
 }
 
 fun main() = application {
+    val maxSize = Runtime.getRuntime().maxMemory() / 1024/ 1024.0
+    println("Max memory heap size of program: $maxSize MB")
     val imgsize = 512
     val use3inRowLayout = true
     val state = rememberWindowState(size = DpSize.Unspecified)

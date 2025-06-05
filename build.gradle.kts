@@ -39,3 +39,10 @@ compose.desktop {
         }
     }
 }
+
+tasks.withType<JavaExec>() {
+    jvmArgs("-Xmx2048m") // did not work
+}
+tasks.test {
+    jvmArgs("-Xmx2048m")
+}
