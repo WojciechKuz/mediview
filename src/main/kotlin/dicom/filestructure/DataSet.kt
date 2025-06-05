@@ -4,16 +4,17 @@ import dicom.DataType
 import dicom.filestructure.groups.*
 
 object DataSet: GroupBase() {
+    //val allTag = AllTagsFromPDF.allTag
     val tagNames: Map<UInt, DataType> = listOf(
-        "Instance Number (0020,0013)" * "IS", // image number. unique in directory
-        "Pixel Data Element (7FE0,0010)" * "OB",
+        +"Instance Number (0020,0013)" * "IS", // image number. unique in directory
+        "Pixel Data Element (7FE0,0010)".toDT().withVRs("OB", "OW"),
         +"Last Data element (FFFC,FFFC)",
-        "(2020,0110) Basic Grayscale Image Sequence" * "SQ", // Basic Grayscale Image Sequence SQ 1 M/M
-        "(2020,0010) Image Position" * "US",
-        "(2020,0020) Polarity" * "CS",
-        "(FFFE,E000) Seq Item" * "  ",
-        "(FFFE,E00D) Seq Item Delimiter" * "  ",
-        "(FFFE,E0DD) Seq Delimiter" * "  ",
+        +"(2020,0110) Basic Grayscale Image Sequence" * "SQ", // Basic Grayscale Image Sequence SQ 1 M/M
+        +"(2020,0010) Image Position" * "US",
+        +"(2020,0020) Polarity" * "CS",
+        +"(FFFE,E000) Seq Item" * "  ",
+        +"(FFFE,E00D) Seq Item Delimiter" * "  ",
+        +"(FFFE,E0DD) Seq Delimiter" * "  ",
     ).associateBy { it.tag } +
             PixelGroup.pixelDataTagNames +
             StudyGroup.dataTagNames +
