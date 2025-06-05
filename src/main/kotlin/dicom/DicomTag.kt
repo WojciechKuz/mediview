@@ -75,7 +75,7 @@ open class DicomTag(hex1: UInt, hex2: UInt, val vr: String, val vl: UInt) {
                 )
             }
             val hex1 = cursor.readNextInt(2)
-            val hex2 = cursor.readNextInt(2)
+            val hex2 = cursor.readNextInt(2)    // both are TAG
 
             if(hex1 == 0xFFFEu) { // control tag, doesn't have VR
                 val len = cursor.readNextInt(4)
@@ -84,12 +84,8 @@ open class DicomTag(hex1: UInt, hex2: UInt, val vr: String, val vl: UInt) {
                 )
             }
 
-            val code = cursor.readNextStr(2)
-            val isLen32bit = when(code) {
-                "OB", "OW", "SQ", "UN" -> true     // has 32bit length displaced by 2 bytes
-                "UT" -> true
-                else -> false
-            }
+            val code = cursor.readNextStr(2)    // VR
+            val isLen32bit = hasAdditional4Bytes(code)
             val len = if(isLen32bit) {
                 if (!cursor.hasNext(2+4)) {
                     throw Exception("ByteArray is too short to read tag 🤨")

@@ -39,7 +39,7 @@ fun determineDataType(byteData: DicomByteData): DicomDataElement<out Any> {
                 //byteData.valueAsHexStr()
                 if(byteData.len > 4u) {
                     //println("Long OB")
-                    DataRead().interpretOBData(byteData)
+                    OBItemList.interpretOBData(byteData)
                 }
                 else {
                     //println("Short OB")
@@ -66,7 +66,7 @@ fun determineDataType(byteData: DicomByteData): DicomDataElement<out Any> {
                 //byteData.valueAsHexStr()
                 if(byteData.len > 4u) {
                     //println("Long OW")
-                    DataRead().interpretOBData(byteData)
+                    OWItemList.interpretOWData(byteData)
                 }
                 else {
                     //println("Short OW")
@@ -82,7 +82,7 @@ fun determineDataType(byteData: DicomByteData): DicomDataElement<out Any> {
         } 	// [0x504EU] Person Name
         //"SL" -> {} 	// [0x534CU] Signed Long
         "SQ" -> {
-            DataRead().interpretSQData(byteData)
+            SQItemList.interpretSQData(byteData)
         } 	// [0x5351U] Sequence of Items
         "SS" -> { byteData } 	// [0x5353U] Signed Short
         "TM" -> { byteData } 	// [0x544DU] Time

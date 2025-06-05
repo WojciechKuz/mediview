@@ -20,11 +20,6 @@ open class DicomDataElement<T>(hex1: UInt, hex2: UInt, vr: String, vl: UInt, val
             (vl <= tooLong) -> " \"" + value.toString(Charsets.US_ASCII) + "\""
             else -> ""
         }
-        /*is ByteArray -> " " + if (vl <= tooLong) // isLengthDefined() // value.size <= 256
-                " \"" + value.toString(Charsets.US_ASCII) + "\""
-            else
-                ""*/
-        //"\n" + value.toHexString()
         is String -> " " + if (vl <= tooLong)
                 value
             else
@@ -39,6 +34,13 @@ open class DicomDataElement<T>(hex1: UInt, hex2: UInt, vr: String, vl: UInt, val
         }
         is OBItemList -> {
             println("OB Item List to String")
+            " " + if(value.isNotEmpty())
+                value.toString()
+            else
+                ""
+        }
+        is OWItemList -> {
+            println("OW Item List to String")
             " " + if(value.isNotEmpty())
                 value.toString()
             else

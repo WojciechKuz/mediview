@@ -114,3 +114,6 @@ fun endianIntParser(cursor: DicomCursor, endian: ByteOrder, len: UInt = 4u): UIn
 
 /** Parse (unsigned) int with little endian. Parse first length bytes in FieldLength range. Does NOT increase cursor. */
 fun littleEndianIntParser(cursor: DicomCursor, len: UInt = 4u): UInt = cursor.byteField(len).map { it.toU() }.reduceRight { i, acc -> acc * 256u + i  }
+
+// Does not make sense. practically everytime it's little endian.
+//fun getEncoding(bitsAllocated: UInt) = if(bitsAllocated > 8) ByteOrder.LITTLE_ENDIAN else

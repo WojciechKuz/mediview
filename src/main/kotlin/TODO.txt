@@ -10,3 +10,12 @@ spróbuj odczytać dane z obrazka, nawet może prosto na ekran - Prosto nie dzia
 
 // https://dicom.nema.org/medical/dicom/current/output/html/part10.html#glossentry_DICOMFileFormat
 // TABLE A.1-1. Directory Content Example
+
+
+Nie czyta tagów OW.
+
+Transfer syntax jest "1.2.840.10008.1.2.1 ". JPEG lossless, process 14 ma 4.70 na końcu, tu jest .1
+
+Trzeba dowiedzieć się, jak interpretować OW.
+
+Interpretacja może być różna zależnie od innych tagów!

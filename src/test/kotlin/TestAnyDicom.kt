@@ -6,6 +6,7 @@ import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.rememberWindowState
 import androidx.compose.ui.window.application
 import dicom.DicomTag
+import dicom.OBItemList
 import dicom.byteArrayToFile
 import dicom.byteArrayToImageBitmap
 import dicom.toHexString
@@ -71,7 +72,7 @@ class TestAnyDicom {
         // this byteData is OB tag value. It has sub-elements. This needs to be converted to get element[1]
         val byteData = DataRead().determineOBLength(cursor, imgTag) // create DicomDataElement = tag + value. Set length
         println(byteData.toString())
-        val obData = DataRead().interpretOBData(byteData)
+        val obData = OBItemList.interpretOBData(byteData)
 
         val imageBytes = if(!swapWithRealImage) obData.value[1].value else File("image1.jpg").readBytes()
         val bitmap = byteArrayToImageBitmap(imageBytes)
@@ -107,7 +108,7 @@ class TestAnyDicom {
 
         // this byteData is OB tag value. It has sub-elements. This needs to be converted to get element[1]
         val byteData = DataRead().determineOBLength(cursor, imgTag) // create DicomDataElement = tag + value. Set length
-        val obData = DataRead().interpretOBData(byteData)
+        val obData = OBItemList.interpretOBData(byteData)
 
         val imageBytes = obData.value[1].value
         //val imageBytes = File("image1.jpg").readBytes() // jpg -> bytes -> jpg works
