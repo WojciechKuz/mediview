@@ -5,31 +5,32 @@ import dicom.DicomCursor
 import dicom.DicomDataElement
 import dicom.DicomTag
 import dicom.TagToDataMap
-import dicom.determineDataType
+import dicom.safeDetermineDataType
 import dicom.tagAsUInt
 
 /** High level dicom reading functions.
- * @param ignoreWarnings When reading tag with vr of `"  "` don't print any warning. */
-class DataRead(private val ignoreWarnings: Boolean = false) {
+ * @param warnings if print any warnings. */
+class DataRead(private val warnings: Boolean = true) {
 
     private fun tryDetermineType(v: DicomByteData): DicomDataElement<out Any> {
-        try {
-            return determineDataType(v)
+        val result = safeDetermineDataType(v)
+        if(!result.status.canProceed) {
+            Exception().printStackTrace()
+            return v as DicomDataElement<out Any>
+        } else {
+            if(warnings && result.status.status != Status.St.OK)
+                println(result.status.message)
         }
-        catch (ex: Exception) {
-            ex.printStackTrace()
-        }
-        return v as DicomDataElement<out Any>
+        return result.data
     }
 
     /** Get Full Data Map. Control tags like (FFFE,E00D) are ignored */
     fun getFullDataMap(cursor: DicomCursor): TagToDataMap {
-        return createDataMap(cursor).mapValues { (_, v) -> tryDetermineType(v)
-        }
+        return createDataMap(cursor).mapValues { (_, v) -> tryDetermineType(v) }
     }
 
     fun getPartialDataMap(cursor: DicomCursor, selectedTags: List<UInt>): TagToDataMap {
-        return mapOfCertainTags(cursor, selectedTags).mapValues { (_, v) -> determineDataType(v) }
+        return mapOfCertainTags(cursor, selectedTags).mapValues { (_, v) -> tryDetermineType(v) }
     }
 
     /** While condition. Has side effect of writing to a map
@@ -67,35 +68,35 @@ class DataRead(private val ignoreWarnings: Boolean = false) {
             "OB" -> {
                 if(stopTag.isLengthDefined()) {
                     if(stopTag.canReadValue(cursor)) {
-                        dataMap[stopTag.tag] = DicomByteData(stopTag, cursor.readNextByteField(stopTag.len))
+                        dataMap[stopTag.tag] = DicomByteData(stopTag, cursor.readNextByteField(stopTag.len), nestedData = false)
                     }
                     // just read value
                 }
                 else {
-                    val alteredStopTagData = determineOBLength(cursor, stopTag)
+                    val alteredStopTagData = determineOBLength(cursor, stopTag) // sets nested = true
                     dataMap[alteredStopTagData.tag] = alteredStopTagData
                 }
             }
             "OW" -> {
                 if(stopTag.isLengthDefined()) {
                     if(stopTag.canReadValue(cursor)) {
-                        dataMap[stopTag.tag] = DicomByteData(stopTag, cursor.readNextByteField(stopTag.len))
+                        dataMap[stopTag.tag] = DicomByteData(stopTag, cursor.readNextByteField(stopTag.len), nestedData = false)
                     }
                     // just read value
                 }
                 else {
                     println("Length undefined, determine it...")
-                    val alteredStopTagData = determineOWLength(cursor, stopTag)
+                    val alteredStopTagData = determineOWLength(cursor, stopTag) // sets nested = true
                     dataMap[alteredStopTagData.tag] = alteredStopTagData
                 }
             }
             "SQ" -> {
                 if( stopTag.canReadValue(cursor) ) {
-                    dataMap[stopTag.tag] = DicomByteData(stopTag, cursor.readNextByteField(stopTag.len))
+                    dataMap[stopTag.tag] = DicomByteData(stopTag, cursor.readNextByteField(stopTag.len), nestedData = true)
                 }
             }
             "  " -> {
-                if(!ignoreWarnings) {
+                if(warnings) {
                     println("Warning! Control tags in global context.")
                     println("They are not unique, not suitable for a Map.")
                 }
@@ -137,7 +138,7 @@ class DataRead(private val ignoreWarnings: Boolean = false) {
 
             cursor.restoreCursorPosition(prevCursor)
             return DicomByteData(
-                obTag.tagPt1, obTag.tagPt2, obTag.vr, obLength, cursor.readNextByteField(obLength)
+                obTag.tagPt1, obTag.tagPt2, obTag.vr, obLength, cursor.readNextByteField(obLength), nestedData = true
             )
         }
         else {

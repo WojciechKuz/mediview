@@ -3,8 +3,12 @@ package dicom
  *
  * ⚠ Use `valueAsSomeType()` methods only when value is ByteArray.
  * When type of value is already known, use `as SomeType` instead. */
-open class DicomDataElement<T>(hex1: UInt, hex2: UInt, vr: String, vl: UInt, val value: T): DicomTag(hex1, hex2, vr, vl) {
-    constructor(dicomTag: DicomTag, value: T): this(dicomTag.tagPt1, dicomTag.tagPt2, dicomTag.vr, dicomTag.vl, value)
+open class DicomDataElement<T>(
+    hex1: UInt, hex2: UInt, vr: String, vl: UInt, val value: T, private var nestedData: Boolean = false
+): DicomTag(hex1, hex2, vr, vl) {
+
+    constructor(dicomTag: DicomTag, value: T, nestedData: Boolean = false):
+            this(dicomTag.tagPt1, dicomTag.tagPt2, dicomTag.vr, dicomTag.vl, value, nestedData)
 
     val dicomTag: DicomTag
         get() = this
@@ -33,14 +37,14 @@ open class DicomDataElement<T>(hex1: UInt, hex2: UInt, vr: String, vl: UInt, val
                 ""
         }
         is OBItemList -> {
-            println("OB Item List to String")
+            //println("OB Item List to String")
             " " + if(value.isNotEmpty())
                 value.toString()
             else
                 ""
         }
         is OWItemList -> {
-            println("OW Item List to String")
+            //println("OW Item List to String")
             " " + if(value.isNotEmpty())
                 value.toString()
             else
@@ -48,6 +52,13 @@ open class DicomDataElement<T>(hex1: UInt, hex2: UInt, vr: String, vl: UInt, val
         }
         else -> " " + value.toString()
     }
+
+    fun setNested() { nestedData = true }
+    val isNested: Boolean
+        get() = when(vr) {
+            "SQ", "OB", "OW" -> nestedData
+            else -> false
+        }
 
     /** ⚠ Use this method only when value is ByteArray. */
     fun valueAsString(): DicomDataElement<String> {

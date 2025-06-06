@@ -74,7 +74,7 @@ class TestAnyDicom {
         println(byteData.toString())
         val obData = OBItemList.interpretOBData(byteData)
 
-        val imageBytes = if(!swapWithRealImage) obData.value[1].value else File("image1.jpg").readBytes()
+        val imageBytes: ByteArray = if(!swapWithRealImage) obData.value.get().value else File("image1.jpg").readBytes()
         val bitmap = byteArrayToImageBitmap(imageBytes)
         if (bitmap != null) {
             if(openWindow1)

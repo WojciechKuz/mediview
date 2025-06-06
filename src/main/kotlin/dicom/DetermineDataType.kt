@@ -1,37 +1,43 @@
 package dicom
 
-import dicom.filestructure.DataRead
+import DataAndStatus
+import Status
+import withStatus
 
+fun determineDataType(byteData: DicomByteData) = safeDetermineDataType(byteData).data
 
-fun determineDataType(byteData: DicomByteData): DicomDataElement<out Any> {
-    //
+private val fallbackStatus = Status("As fallback interpret as byte array")
+
+fun safeDetermineDataType(byteData: DicomByteData): DataAndStatus<DicomDataElement<out Any>> {
+
+    // some unsupported VRs are interpreted as byteData
     return when(byteData.vr) {
         "AS" -> {
-            byteData.valueAsString()
+            byteData.valueAsString().withStatus()
         } 	// [0x4153U] Age String
         "CS" -> {
-            byteData.valueAsString()
+            byteData.valueAsString().withStatus()
         } 	// [0x4353U] Code String
         "DS" -> {
-            byteData.valueAsString()
+            byteData.valueAsString().withStatus()
         } 	// [0x4453U] Decimal String
         "IS" -> {
-            byteData.valueAsString()
+            byteData.valueAsString().withStatus()
         } 	// [0x4953U] Integer String
         "LO" -> {
-            byteData.valueAsString()
+            byteData.valueAsString().withStatus()
         } 	// [0x4C4FU] Long String
         "LT" -> {
-            byteData.valueAsString()
+            byteData.valueAsString().withStatus()
         } 	// [0x4C54U] Long Text
         "SH" -> {
-            byteData.valueAsString()
+            byteData.valueAsString().withStatus()
         } 	// [0x5348U] Short String
         "ST" -> {
-            byteData.valueAsString()
+            byteData.valueAsString().withStatus()
         } 	// [0x5354U] Short Text
         "UI" -> {
-            byteData.valueAsString()
+            byteData.valueAsString().withStatus()
         } 	// [0x5549U] Unique Identifier (UID)
 
         "OB" -> {
@@ -39,21 +45,21 @@ fun determineDataType(byteData: DicomByteData): DicomDataElement<out Any> {
                 //byteData.valueAsHexStr()
                 if(byteData.len > 4u) {
                     //println("Long OB")
-                    OBItemList.interpretOBData(byteData)
+                    OBItemList.interpretOBData(byteData).withStatus()
                 }
                 else {
                     //println("Short OB")
-                    byteData.valueAsHexStr()
+                    byteData.valueAsHexStr().withStatus()
                 }
             }
             else {
-                byteData // shouldn't print in that case
+                byteData.withStatus() // shouldn't print in that case
             }
         } 	// [0x4F42U] Other Byte
 
         //"AE" -> {} 	// [0x4145U] Application Entity
         //"AT" -> {} 	// [0x4154U] Attribute Tag
-        "DA" -> { byteData } 	// [0x4441U] Date
+        "DA" -> { byteData.withStatus(fallbackStatus) } 	// [0x4441U] Date
         //"DT" -> {} 	// [0x4454U] Date Time
         //"FD" -> {} 	// [0x4644U] Floating Point Double
         //"FL" -> {} 	// [0x464CU] Floating Point Single
@@ -66,44 +72,44 @@ fun determineDataType(byteData: DicomByteData): DicomDataElement<out Any> {
                 //byteData.valueAsHexStr()
                 if(byteData.len > 4u) {
                     //println("Long OW")
-                    OWItemList.interpretOWData(byteData)
+                    OWItemList.interpretOWData(byteData).withStatus()
                 }
                 else {
                     //println("Short OW")
-                    byteData.valueAsHexStr()
+                    byteData.valueAsHexStr().withStatus()
                 }
             }
             else {
-                byteData // shouldn't print in that case
+                byteData.withStatus() // shouldn't print in that case
             }
         } 	// [0x4F57U] Other Word
         "PN" -> {
-            byteData.valueAsString()
+            byteData.valueAsString().withStatus()
         } 	// [0x504EU] Person Name
         //"SL" -> {} 	// [0x534CU] Signed Long
         "SQ" -> {
-            SQItemList.interpretSQData(byteData)
+            SQItemList.interpretSQData(byteData).withStatus()
         } 	// [0x5351U] Sequence of Items
-        "SS" -> { byteData } 	// [0x5353U] Signed Short
-        "TM" -> { byteData } 	// [0x544DU] Time
+        "SS" -> { byteData.withStatus() } 	// [0x5353U] Signed Short
+        "TM" -> { byteData.withStatus() } 	// [0x544DU] Time
         //"UC" -> {} 	// [0x5543U] Unlimited Characters
         "UL" -> {
-            byteData.valueAsUInt()
+            byteData.valueAsUInt().withStatus()
         } 	// [0x554CU] Unsigned Long
         //"UN" -> {} 	// [0x554EU] Unknown
         //"UR" -> {} 	// [0x5552U] Universal Resource Identifier or Universal Resource Locator(URI/URL)
         "US" -> {
-            byteData.valueAsUInt()
+            byteData.valueAsUInt().withStatus()
         } 	// [0x5553U] Unsigned Short
         //"UT" -> {} 	// [0x5554U] Unlimited Text
         "  " -> {
-            byteData.valueAsHexStr() // shouldn't print in that case
+            byteData.valueAsHexStr().withStatus() // shouldn't print in that case
         }   // My VR for control tags
         else -> {
             fun strHex(i: Int) = i.toString(16).padStart(2, '0')
-            println("ERR: Can't process data type with VR of ${byteData.vr}. ${strHex(byteData.vr[0].code)} ${strHex(byteData.vr[1].code)}")
-            byteData
-            //throw Exception("Can't process data type with VR of ${byteData.vr}.")
+            val warnMsg = "WARN: Can't process data type with VR of ${byteData.vr}. ${strHex(byteData.vr[0].code)} ${strHex(byteData.vr[1].code)}"
+            println(warnMsg)
+            byteData.withStatus(Status(warnMsg, Status.St.ERROR))
         }
     }
     // IMPORTANT US, UL, OB, SQ
