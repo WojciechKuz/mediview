@@ -106,14 +106,21 @@ fun hexString(uInt: UInt, pad: Int = 4) = uInt.toString(16).padStart(pad, '0')
 /** Parse (unsigned) int with given endian. Parse first length bytes in FieldLength range. Does NOT increase cursor. */
 fun endianIntParser(cursor: DicomCursor, endian: ByteOrder, len: UInt = 4u): UInt {
     if(cursor.hasNext(len)) throw Exception("ByteArray is too short to parse Int 🤨")
+    return endianIntParser(cursor.byteField(len), endian)
+}
+
+/** Parse (unsigned) int with given endian. Parse first length bytes in FieldLength range. Does NOT increase cursor. */
+fun endianIntParser(bytes: ByteArray, endian: ByteOrder): UInt {
     if(endian == ByteOrder.BIG_ENDIAN) {
-        return cursor.byteField(len).map { it.toU() }.reduce { acc, i -> acc * 256u + i }
+        return bytes.map { it.toU() }.reduce { acc, i -> acc * 256u + i }
     }
-    return cursor.byteField(len).map { it.toU() }.reduceRight { i, acc -> acc * 256u + i } //.reduce { acc, i -> acc + i * 256u }
+    return bytes.map { it.toU() }.reduceRight { i, acc -> acc * 256u + i } //.reduce { acc, i -> acc + i * 256u }
 }
 
 /** Parse (unsigned) int with little endian. Parse first length bytes in FieldLength range. Does NOT increase cursor. */
-fun littleEndianIntParser(cursor: DicomCursor, len: UInt = 4u): UInt = cursor.byteField(len).map { it.toU() }.reduceRight { i, acc -> acc * 256u + i  }
+fun littleEndianIntParser(cursor: DicomCursor, len: UInt = 4u): UInt = littleEndianIntParser(cursor.byteField(len))
+
+fun littleEndianIntParser(bytes: ByteArray): UInt = bytes.map { it.toU() }.reduceRight { i, acc -> acc * 256u + i  }
 
 // Does not make sense. practically everytime it's little endian.
 //fun getEncoding(bitsAllocated: UInt) = if(bitsAllocated > 8) ByteOrder.LITTLE_ENDIAN else

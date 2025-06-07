@@ -98,7 +98,9 @@ class DicomCursor(val bytes: ByteArray, position: UInt = 0u): Comparable<UInt> {
         }
         return list
     }
-    /** @param tag 4 byte tag
+    /** ⚠ This does not perform any processing of found tag. It is better to use
+     * `DataRead().getPartialDataMap()` than calling `cursor.findTag()` and then processing it by yourself.
+     * @param tag 4 byte tag
      * @return new cursor with position just before tag. If nothing found, returns cursor set to the end. */
     fun findTag(tag: UInt): DicomCursor {
         val iterateCursor = DicomCursor(this)

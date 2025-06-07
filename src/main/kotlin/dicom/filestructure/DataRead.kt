@@ -105,10 +105,10 @@ class DataRead(private val warnings: Boolean = true) {
         }
     }
 
-    fun determineOWLength(cursor: DicomCursor, obTag: DicomTag, createUntil: (DicomTag) -> Boolean  = {false}) = determineOBLength(cursor, obTag, createUntil)
+    private fun determineOWLength(cursor: DicomCursor, obTag: DicomTag, createUntil: (DicomTag) -> Boolean  = {false}) = determineOBLength(cursor, obTag, createUntil)
 
-    /** Call for OB of undefined length. Will determine the length and set ByteArray */
-    fun determineOBLength(cursor: DicomCursor, obTag: DicomTag, createUntil: (DicomTag) -> Boolean  = {false}): DicomByteData {
+    /** ⚠ Call ONLY for OB of undefined length. Will determine the length and set ByteArray */
+    private fun determineOBLength(cursor: DicomCursor, obTag: DicomTag, createUntil: (DicomTag) -> Boolean  = {false}): DicomByteData {
         println("Determine OB/OW length")
         // tag already read, now read value
         if(DicomTag.canReadTag(cursor) != 0u) {
