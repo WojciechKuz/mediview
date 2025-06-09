@@ -26,6 +26,9 @@ dependencies {
     //api("org.jetbrains.skija:${"skija-windows"}:${"0.93.6"}")
     //implementation("io.coil-kt.coil3:coil-compose:3.2.0")
     implementation("com.twelvemonkeys.imageio:imageio-jpeg:3.12.0") // Yay! twelveMonkeys works 😄
+
+    implementation("org.jetbrains.kotlinx:multik-core:0.2.3")
+    implementation("org.jetbrains.kotlinx:multik-default:0.2.3")
 }
 
 compose.desktop {

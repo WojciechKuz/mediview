@@ -16,6 +16,7 @@ val standardImgInfo = ImageInfo(
 )
 //val greyImgInfo = ImageInfo(512, 512, ColorType.GRAY_8, ColorAlphaType.OPAQUE)
 
+/*
 @Deprecated("")
 class BitmapCreator() {
 
@@ -44,4 +45,4 @@ class BitmapCreator() {
             return skiaBitmap.toBufferedImage().toComposeImageBitmap()
         }
     }
-}
+}*/

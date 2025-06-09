@@ -5,7 +5,7 @@ import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.rememberWindowState
 import androidx.compose.ui.window.application
-import dicom.InterpretData
+import transform3d.InterpretData
 import dicom.OBItemList
 import dicom.OWItemList
 import dicom.TagToDataMap

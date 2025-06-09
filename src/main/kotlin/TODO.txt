@@ -5,17 +5,21 @@ Wybór pliku z dowolnego folderu, nie tylko resources!
 
 TODO try to read image from dicom file format
 
-spróbuj odczytać dane z obrazka, nawet może prosto na ekran - Prosto nie działa. Trzeba samemu zinterpretować?!
-
-
 // https://dicom.nema.org/medical/dicom/current/output/html/part10.html#glossentry_DICOMFileFormat
 // TABLE A.1-1. Directory Content Example
 
 
-Nie czyta tagów OW.
+- OK z ByteArray tworzy ShortArray i kilka takich do mk.3DArray
+- DONE I spraw, żeby na podstawie transferSyntax interpretowało klasycznie, jako JPEG, albo nieskompresowane.
+  Może to jako funkcja w interpretData, ale zmień użycia w byteArrayToImage na to, co napiszesz.
 
-Transfer syntax jest "1.2.840.10008.1.2.1 ". JPEG lossless, process 14 ma 4.70 na końcu, tu jest .1
+TODO:
+- przeskaluj hounsfield
 
-Trzeba dowiedzieć się, jak interpretować OW.
+- get przekrój
 
-Interpretacja może być różna zależnie od innych tagów!
+- regulacja zakresu
+
+- zmiana palety barw
+
+Zadanie 2

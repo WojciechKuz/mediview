@@ -14,6 +14,9 @@ fun tagAsUInt(tagStr: String): UInt {
 /** Return tag formatted like `(0028,0100)` from uint */
 fun uIntAsTag(tagUInt: UInt): String = "(${hexString(tagUInt shl 16)},${hexString(tagUInt and 0xffffu)})"
 
+/** Return tag formatted like `[0028 0100]` from uint */
+fun uIntAsTag2(tagUInt: UInt): String = "[${hexString(tagUInt shl 16)} ${hexString(tagUInt and 0xffffu)}]"
+
 /** Used in converting 4 hexadecimal characters to 2 Byte unsigned integer. */
 private fun byteArrayToUInt(bytes: ByteArray): UInt {
     var uint: UInt = 0u
