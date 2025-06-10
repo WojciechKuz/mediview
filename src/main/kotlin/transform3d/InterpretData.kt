@@ -33,6 +33,16 @@ object InterpretData {
             else -> ImageType.UNKNOWN
         }
     }
+    /** For pixelSize element and distance between slices, get by how much z axis should be rescaled. So, returns 1/scale_Z */
+    fun interpretZScaleFactor(sliceDist: DicomDataElement<out Any>): Double {
+        val sliceTag = tagAsUInt("[0018 0050]") // ---> Slice Thickness
+        if(sliceDist.tag != sliceTag) {
+            throwWrongTag(sliceTag,sliceDist.tag)
+        }
+        val strVal =  sliceDist.value as String
+        val sliceThickness = strVal.trim().toDouble()
+        return 1.0 / sliceThickness
+    }
 
     val columnsTag = tagAsUInt("(0028,0011)") // x, width
     val rowsTag    = tagAsUInt("(0028,0010)") // y, height
@@ -164,5 +174,27 @@ object InterpretData {
 
         ""
     ).map { it -> tagAsUInt(it) }
+
+    fun interpretRescale(resIntercept: DicomDataElement<out Any>, resSlope: DicomDataElement<out Any>): (Short) -> Short {
+        val resIcTag = tagAsUInt("[0028 1052]")
+        val resSlTag = tagAsUInt("[0028 1053]")
+        if(resIcTag != resIntercept.tag) { throwWrongTag(resIcTag, resIntercept.tag) }
+        if(resSlTag != resSlope.tag) { throwWrongTag(resSlTag, resSlope.tag) }
+
+        // ok, now value can be read
+
+        TODO() // return as lambda { v -> v * slope + intercept }
+    }
+
+    fun interpretGantryAkaDetectorTilt(gantryTilt: DicomDataElement<out Any>) {
+        val gantryTag = tagAsUInt("[0018 1120]")
+        if(gantryTag != gantryTilt.tag) { throwWrongTag(gantryTag, gantryTilt.tag) }
+
+        // ok, now value can be read
+
+        TODO()
+    }
+
+
 }
 typealias Short2D = Array<Array<Short>>

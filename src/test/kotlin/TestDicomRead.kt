@@ -18,7 +18,7 @@ class TestDicomRead {
         assert(Header.dicomPrefix(cursor) == "DICM")
         val infoLength = informationGroupLength(cursor)
         // read next infoLength bytes and see what's after it. There are still some tags.
-        cursor.moveBy(infoLength)       // FIXME we're skipping infoGroup?
+        cursor.moveBy(infoLength)       // we're skipping infoGroup?
         println(cursor.readNextByteField(16).toHexString())
         println(cursor.readNextByteField(16).toHexString())
     }

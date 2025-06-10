@@ -56,6 +56,3 @@ object ImageReader {
         )
     }
 }
-
-// TODO dicom image (tag 7fe0 0010) to BitmapPainter (Kt Compose)
-//

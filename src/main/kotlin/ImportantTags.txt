@@ -1,0 +1,27 @@
+
+    val necessaryInfo = listOf<String>(
+✔        "[7FE0 0010]", // pixel data
+✔        "(0028,0010)", // rows
+✔        "(0028,0011)", // columns
+✖        "(0028,1050)", // window center ?
+✖        "(0028,1051)", // window width ?
+✔        "(0028,0100)", //"Bits Allocated"
+✔        "(0028,0101)", //"Bits Stored"
+✔        "(0028,0102)", //"High Bit",
+✔        "[0018 0050]", // ---> Slice Thickness
+!        "[0018 1120]", // ---> Gantry/Detector Tilt (GANTRY)
+✖        "[0020 1041]", // ---> Slice location
+NOTEXIST        // distanceBetweenSlices ???
+✖        "[0020 0032]", // ---> Image Position
+✔        "[0028 0103]", // -> Data Element Pixel Representation (SIGN -)
+!        "[0028 0106]", // -> Smallest Image Pixel Value (MIN VAL)
+!        "[0028 0107]", // -> Largest Image Pixel Value  (MAX VAL)
+!        "[0028 1052]", // -> "Rescale Intercept"
+!        "[0028 1053]", // -> "Rescale Slope"
+✔        "[0020 0011]", // -> "Series Number"
+✔        "[0020 0013]", // -> "Instance Number"
+
+        ""
+    ).map { it -> tagAsUInt(it) }
+
+    ✔❌✖
