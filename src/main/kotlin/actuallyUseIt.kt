@@ -55,4 +55,6 @@ fun useIt() {
     // at this point we have 512x512x512 array
 
     // TODO rescale hounsfield
+
+    // TODO array to ImageBitmap
 }

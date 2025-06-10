@@ -10,7 +10,18 @@ import org.jetbrains.skia.Bitmap
 import org.jetbrains.skia.ColorAlphaType
 import org.jetbrains.skia.ColorType
 import org.jetbrains.skia.ImageInfo
-import org.jetbrains.skiko.toBufferedImage
+import java.io.File
+
+fun skiaBitmapInfo(sbitmap: Bitmap) {
+    val width = sbitmap.width
+    val height = sbitmap.height
+    val rbytes = sbitmap.rowBytes
+    val pxrbytes = sbitmap.rowBytesAsPixels
+    println("width: $width height: $height")
+    println("row bytes: $rbytes")
+    println("row bytes as pixels: $pxrbytes")
+}
+
 
 /** ByteArray (encoded JPEG) -> Compose ImageBitmap.
  * Using Twelve Monkeys library for JPEG decoding, as basic ImageIO does not support SOI of FFC3.
@@ -20,6 +31,18 @@ fun byteArrayToImageBitmap(byteArray: ByteArray): ImageBitmap? {
         val inputStream = ByteArrayInputStream(byteArray)
         val image = ImageIO.read(inputStream)
 
+        return image.toComposeImageBitmap()
+    } catch (e: Exception) {
+        e.printStackTrace()
+        return null
+    }
+}
+
+/** Same as byteArrayToImageBitmap, but works on files instead of ByteArrays */
+fun fileToImageBitmap(imgPath: String): ImageBitmap? {
+    val file = File(imgPath)
+    try {
+        val image = ImageIO.read(file)
         return image.toComposeImageBitmap()
     } catch (e: Exception) {
         e.printStackTrace()
@@ -40,9 +63,11 @@ fun adaptGreyInfo(width: UInt, height: UInt, bitsAllocated: UInt) = ImageInfo(
     ColorAlphaType.OPAQUE
 )
 
-/** Compose ImageBitmap -> ByteArray (8b greyscale). */
+/** Compose ImageBitmap -> ByteArray. */
 fun imageBitmapToByteArray(image: ImageBitmap, imgInfo: ImageInfo): ByteArray {
-    val destBytes: ByteArray? = image.asSkiaBitmap().readPixels(imgInfo, imgInfo.width * 2)
+    val skiaBitmap = image.asSkiaBitmap()
+    //skiaBitmapInfo(skiaBitmap)
+    val destBytes: ByteArray? = skiaBitmap.readPixels(imgInfo, skiaBitmap.rowBytes)
     if (destBytes != null) {
         return destBytes
     }
