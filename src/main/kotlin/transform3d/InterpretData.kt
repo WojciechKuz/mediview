@@ -7,7 +7,6 @@ import dicom.TagToDataMap
 import dicom.adaptGreyInfo
 import dicom.jpegToByteArray
 import dicom.tagAsUInt
-import dicom.uIntAsTag
 import org.jetbrains.skia.ImageInfo
 import kotlin.collections.component1
 import kotlin.collections.component2
@@ -175,6 +174,8 @@ object InterpretData {
         ""
     ).map { it -> tagAsUInt(it) }
 
+
+
     fun interpretRescale(resIntercept: DicomDataElement<out Any>, resSlope: DicomDataElement<out Any>): (Short) -> Short {
         val resIcTag = tagAsUInt("[0028 1052]")
         val resSlTag = tagAsUInt("[0028 1053]")
@@ -182,17 +183,21 @@ object InterpretData {
         if(resSlTag != resSlope.tag) { throwWrongTag(resSlTag, resSlope.tag) }
 
         // ok, now value can be read
+        val intercept = (resIntercept.value as String).trim().toDouble().toInt()
+        val slope = (resSlope.value as String).trim().toDouble().toInt()
 
-        TODO() // return as lambda { v -> v * slope + intercept }
+        return { v -> (v * slope + intercept).toShort() } // return as lambda { v -> v * slope + intercept }
     }
 
-    fun interpretGantryAkaDetectorTilt(gantryTilt: DicomDataElement<out Any>) {
+    /** @return gantry angle in degrees */
+    fun interpretGantryAkaDetectorTilt(gantryTilt: DicomDataElement<out Any>): Double {
+
         val gantryTag = tagAsUInt("[0018 1120]")
         if(gantryTag != gantryTilt.tag) { throwWrongTag(gantryTag, gantryTilt.tag) }
 
         // ok, now value can be read
-
-        TODO()
+        val gantry = Config.gantryDirection * (gantryTilt.value as String).trim().toDouble() // in degrees
+        return gantry
     }
 
 

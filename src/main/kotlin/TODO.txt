@@ -10,22 +10,21 @@ Wybór pliku z dowolnego folderu, nie tylko resources!
 - OK z ByteArray tworzy ShortArray i kilka takich do mk.3DArray
 - DONE I spraw, żeby na podstawie transferSyntax interpretowało klasycznie, jako JPEG, albo nieskompresowane.
   Może to jako funkcja w interpretData, ale zmień użycia w byteArrayToImage na to, co napiszesz.
+- DONE przeskaluj hounsfield
 
 TODO:
-- przeskaluj hounsfield
 
-- get przekrój
+- get przekrój.
+    - prostopadle done,
+    - skośnie todo
 
 - regulacja zakresu
 
 - zmiana palety barw
 
 Rzeczy pozostałe do uwzględnienia:
-!        "[0018 1120]", // ---> Gantry/Detector Tilt (GANTRY)
 !        "[0028 0106]", // -> Smallest Image Pixel Value (MIN VAL)
 !        "[0028 0107]", // -> Largest Image Pixel Value  (MAX VAL)
-!        "[0028 1052]", // -> "Rescale Intercept"
-!        "[0028 1053]", // -> "Rescale Slope"
 
 
 Zadanie 2
