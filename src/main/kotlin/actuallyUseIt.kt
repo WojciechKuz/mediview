@@ -2,8 +2,6 @@
 import dicom.TagToDataMap
 import dicom.filestructure.DataRead
 import dicom.tagAsUInt
-import transform3d.Array1D
-import transform3d.Array3D
 import transform3d.ArrayOps
 import transform3d.Config
 import transform3d.ImageAndData
@@ -70,7 +68,7 @@ fun loadDicomData(): ImageAndData<ArrayOps> {
     // 6. interpolate z axis
     array3D.interpolateOverZ(
         scaleZ, // computed from pixel size/spacing whatever
-        Interpolation::interpolateBL
+        Interpolation::rescaleBL
     )
 
     val whd = array3D.whd
@@ -92,9 +90,7 @@ fun loadDicomData(): ImageAndData<ArrayOps> {
     array3D.transformEachPixel(rescaleFunction)
 
     // 9. convert to Multik's 3D array
-    val array = array3D.convertMultik(whd) // ???
+    //val array = array3D.convertMultik(whd) // ???
 
-    // TODO array to ImageBitmap
     return ImageAndData<ArrayOps>(oneDataMap, array3D)
-
 }

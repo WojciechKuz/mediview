@@ -8,7 +8,7 @@ import kotlin.math.round
 object Interpolation {
     /** Performs Nearest Neighbor Interpolation
      * @param scaleFactor scale list by a factor. Values greater than 1 increase, lower decrease */
-    fun interpolateNN(dataList: Array<Short>, scaleFactor: Double): Array<Short> {
+    fun rescaleNN(dataList: Array<Short>, scaleFactor: Double): Array<Short> {
         val targetSize = (dataList.size * scaleFactor).toInt() // round? ceil? floor?
         val target = Array(targetSize) { ti ->
             dataList[
@@ -19,25 +19,25 @@ object Interpolation {
     }
 
     /** Performs Nearest Neighbor Interpolation. */
-    fun interpolateNN(dataList: Array<Short>, depth: Int, targetDepth: Int): Array<Short>
-    = interpolateNN(dataList, depth.toDouble() / targetDepth)
+    fun rescaleNN(dataList: Array<Short>, depth: Int, targetDepth: Int): Array<Short>
+    = rescaleNN(dataList, depth.toDouble() / targetDepth)
 
     /** Performs bilinear interpolation
      * @param scaleFactor scale list by a factor. Values greater than 1 increase, lower decrease */
-    fun interpolateBL(dataList: Array<Short>, scaleFactor: Double): Array<Short> {
+    fun rescaleBL(dataList: Array<Short>, scaleFactor: Double): Array<Short> {
         val targetSize = (dataList.size * scaleFactor).toInt() // round? ceil? floor?
         val target = Array(targetSize) { ti ->
             val oldI = ti * scaleFactor
-            getValueBetweenIndices(dataList, oldI)
+            linearInterpolation(dataList, oldI)
         }
         return target
     }
 
     /** Performs bilinear interpolation */
-    fun interpolateBL(dataList: Array<Short>, depth: Int, targetDepth: Int): Array<Short> {
+    fun rescaleBL(dataList: Array<Short>, depth: Int, targetDepth: Int): Array<Short> {
         // depth is actually list size, lol
         val scale = depth / targetDepth.toDouble()
-        return interpolateBL(dataList, scale)
+        return rescaleBL(dataList, scale)
     }
 
     /** Moves array by given floating amount. Uses Nearest neighbor to get value. */
@@ -55,7 +55,7 @@ object Interpolation {
     fun moveBL(dataList: Array<Short>, moveBy: Double): Array<Short> {
         val target = Array(dataList.size) { ti ->
             val oldI = ti - moveBy
-            getValueBetweenIndices(dataList, oldI)
+            linearInterpolation(dataList, oldI)
         }
         return target
     }
@@ -71,7 +71,7 @@ object Interpolation {
     }
     /** Get value from old array by floating index. If index falls in between real indices, it takes
      * into account both values by a factor. */
-    private fun getValueBetweenIndices(dataList: Array<Short>, index: Double): Short {
+    fun linearInterpolation(dataList: Array<Short>, index: Double): Short {
         val origI1 = ensureInBounds(floor(index), dataList.size).toInt()
         val origI2 = ensureInBounds(ceil(index), dataList.size).toInt()
         val w = index - origI1

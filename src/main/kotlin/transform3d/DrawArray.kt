@@ -34,3 +34,9 @@ fun rawByteArrayToImageBitmap(bytes: ByteArray, width: Int, height: Int, bytesPe
     skiaBitmap.installPixels(sourceInfo, bytes, width * bytesPerPx)
     return skiaBitmap.asComposeImageBitmap()
 }
+
+// TODO array to ImageBitmap
+// (on ImageAndData<ArrayOps>)
+
+// TODO on ArrayOps:
+// combine valuesAtIndices and getAnyOrientationSlice to get slice in any orientation
