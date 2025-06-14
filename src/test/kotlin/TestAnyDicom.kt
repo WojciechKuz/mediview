@@ -1,7 +1,13 @@
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.width
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.unit.DpSize
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.rememberWindowState
 import androidx.compose.ui.window.application
@@ -76,7 +82,7 @@ class TestAnyDicom {
         val byteData: ByteArray = when(imgData.value) {
             is OWItemList -> imgData.value.get().value
             is OBItemList -> imgData.value.get().value
-            else -> { imgData.value as ByteArray }
+            else -> imgData.value as ByteArray
         }
 
         val imageBytes: ByteArray = if(!swapWithRealImage) byteData else File("image1.jpg").readBytes()
@@ -147,9 +153,9 @@ Item: [fffe e000]    275442
         val imgsize = 512
         val state = rememberWindowState(size = DpSize.Unspecified)
         Window(onCloseRequest = ::exitApplication, title = "MediView by wojkuzb", state = state) {
-            image(
-                if(imageBytes != null) getPainterByteArray(imageBytes) else getPainter(ReadHelp.defaultPath)
-                , imgsize, Color.Blue
+            Image(
+                if(imageBytes != null) getPainter(imageBytes) else getPainter(ReadHelp.defaultPath),
+                "opis", modifier = Modifier.width(imgsize.dp).height(imgsize.dp).border(1.dp, Color.Blue)
             )
         }
     }
@@ -157,9 +163,9 @@ Item: [fffe e000]    275442
         val imgsize = 512
         val state = rememberWindowState(size = DpSize.Unspecified)
         Window(onCloseRequest = ::exitApplication, title = "MediView by wojkuzb", state = state) {
-            image(
-                BitmapPainter( imageBitmap )
-                , imgsize, Color.Blue
+            Image(
+                BitmapPainter( imageBitmap ), "opis",
+                modifier = Modifier.width(imgsize.dp).height(imgsize.dp).border(1.dp, Color.Blue)
             )
         }
     }

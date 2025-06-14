@@ -11,16 +11,18 @@ Wybór pliku z dowolnego folderu, nie tylko resources!
 - DONE I spraw, żeby na podstawie transferSyntax interpretowało klasycznie, jako JPEG, albo nieskompresowane.
   Może to jako funkcja w interpretData, ale zmień użycia w byteArrayToImage na to, co napiszesz.
 - DONE przeskaluj hounsfield
+- DONE get przekrój.
+    - prostopadle done,
+    - skośnie done
 
 TODO:
 
-- get przekrój.
-    - prostopadle done,
-    - skośnie todo
+- wyświetl przekrój w main, daj to na ekran!
+    FIXME za małę wyświetla
 
 - regulacja zakresu
 
-- zmiana palety barw
+- zmiana palety barw array<short> -> wg zakresu na ekran -> array<byte 255>
 
 Rzeczy pozostałe do uwzględnienia:
 !        "[0028 0106]", // -> Smallest Image Pixel Value (MIN VAL)

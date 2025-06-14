@@ -13,6 +13,15 @@ import kotlin.collections.component2
 
 /** Only dataMapToImageData() is important here */
 object InterpretData {
+
+    var said = 0
+    fun sayOnce(say: () -> Unit) {
+        if(said == 0) {
+            say()
+            said++
+        }
+    }
+
     val pixelDataTag = tagAsUInt("[7FE0 0010]")
     val transferSyntaxUIDTag = tagAsUInt("[0002 0010]")
 
@@ -67,20 +76,20 @@ object InterpretData {
         if(imageData.tag != pixelDataTag) {
             throwWrongTag(pixelDataTag,imageData.tag)
         }
-        val imageBytes = when (imageData.value) {
-            is OWItemList -> imageData.value.get()
-            is OBItemList -> imageData.value.get()
+        val imageBytes: ByteArray = when(imageData.value) {
+            is OWItemList -> imageData.value.get().value
+            is OBItemList -> imageData.value.get().value
             is ByteArray -> imageData.value
             else -> imageData.value as ByteArray
         }
         val rawImage = when(transferSyntaxUID(trStxData)) {
             ImageType.JPEG -> {
-                println("Decode from JPEG")
-                jpegToByteArray(imageBytes as ByteArray)
+                sayOnce { println("Decode from JPEG") }
+                jpegToByteArray(imageBytes)
             }
             else -> {
-                println("No need to decode")
-                imageData.value as ByteArray
+                sayOnce { println("No need to decode") }
+                imageBytes
             }
         }
         if (rawImage == null) {
@@ -170,8 +179,6 @@ object InterpretData {
         "[0028 1053]", // -> "Rescale Slope"
         "[0020 0011]", // -> "Series Number"
         "[0020 0013]", // -> "Instance Number"
-
-        ""
     ).map { it -> tagAsUInt(it) }
 
 

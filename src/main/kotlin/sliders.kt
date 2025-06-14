@@ -8,17 +8,19 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import transform3d.View
 
-/** Okienko z suwakami */
+/** Okienko z suwakami.
+ * @param sliderValChange float jest od 0 do 256, a View: Red-SLICE, Green-TOP, Blue-SIDE */
 @Composable
 @Preview
-fun uiSliders(imgsize: Int, horizontal: Boolean = false) {
+fun uiSliders(imgsize: Int, horizontal: Boolean = false, sliderValChange: (Float, View) -> Unit) {
     if (horizontal) {
-        Row { slidersGroup(imgsize) }
+        Row { slidersGroup(imgsize, sliderValChange) }
     }
     else {
         Column {
-            slidersGroup(imgsize)
+            slidersGroup(imgsize, sliderValChange)
             /*
             var text by remember { mutableStateOf("Hello, World!") }
             Button(onClick = {
@@ -49,10 +51,11 @@ private fun getSliderColors(color: Color) = SliderDefaults.colors(
     activeTickColor = Color.Transparent,
 )
 
-/** dodaje 3 suwaki, musi być umieszczone w layoucie */
+/** dodaje 3 suwaki, musi być umieszczone w layoucie
+ * @param sliderValChange float jest od 0 do 256, a View: Red-SLICE, Green-TOP, Blue-SIDE */
 @Composable
 @Preview
-private fun slidersGroup(imgsize: Int) {
+private fun slidersGroup(imgsize: Int, sliderValChange: (Float, View) -> Unit) {
     var redSliderPosition by remember { mutableStateOf(128f) }
     var greenSliderPosition by remember { mutableStateOf(128f) }
     var blueSliderPosition by remember { mutableStateOf(128f) }
@@ -62,7 +65,8 @@ private fun slidersGroup(imgsize: Int) {
         valueRange = 0f..256f,
         onValueChange = {
             redSliderPosition = it
-            println("Red $redSliderPosition")
+            sliderValChange(it, View.SLICE)
+            //println("Red $redSliderPosition")
         },
         colors = getSliderColors(Color.Red),
         steps = 256,
@@ -73,7 +77,8 @@ private fun slidersGroup(imgsize: Int) {
         valueRange = 0f..256f,
         onValueChange = {
             greenSliderPosition = it
-            println("Green $greenSliderPosition")
+            sliderValChange(it, View.TOP)
+            //println("Green $greenSliderPosition")
         },
         colors = getSliderColors(Color.Green),
         steps = 256,
@@ -84,7 +89,8 @@ private fun slidersGroup(imgsize: Int) {
         valueRange = 0f..256f,
         onValueChange = {
             blueSliderPosition = it
-            println("Blue $blueSliderPosition")
+            sliderValChange(it, View.SIDE)
+            //println("Blue $blueSliderPosition")
         },
         colors = getSliderColors(Color.Blue),
         steps = 256,

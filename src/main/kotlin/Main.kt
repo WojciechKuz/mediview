@@ -6,28 +6,27 @@ import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.painter.BitmapPainter
-import androidx.compose.ui.graphics.painter.Painter
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
-import dicom.byteArrayToImageBitmap
-import dicom.fileToImageBitmap
+import transform3d.Config
+import transform3d.View
 /*
 import coil3.PlatformContext
 import coil3.request.ImageRequest
 import coil3.size.Size
 import coil3.compose.LocalPlatformContext
 */
-import java.awt.*
 
+/*
 @Composable
 @Preview
 fun App(imgsize: Int, layout3inRow: Boolean = false) {
     MaterialTheme {
+        layout3plus1(imgsize, layout3inRow)
         /*
         LazyVerticalGrid(
             columns = GridCells.Fixed(2),
@@ -37,103 +36,91 @@ fun App(imgsize: Int, layout3inRow: Boolean = false) {
             // this scope is not @Composable!
         }
         */
-        if (layout3inRow) {
-            layout3plus1(imgsize)
-        }
-        else {
-            layout2x2(imgsize)
-        }
     }
 }
-
-@Composable
-fun getPainterByteArray(bytes: ByteArray): Painter {
-    val imageBitmap = byteArrayToImageBitmap(bytes)
-    if (imageBitmap != null) {
-        return BitmapPainter( imageBitmap )
-    }
-    return painterResource("imagenotfound512.png")
-}
-
-@Composable
-fun getPainter(fileName: String): Painter {
-    val imageBitmap = fileToImageBitmap(fileName)
-    if (imageBitmap != null) {
-        return BitmapPainter( imageBitmap )
-    }
-    return painterResource("imagenotfound512.png")
-}
-
-
-
+*/
 
 @Composable
 @Preview
-fun image(painter: Painter, imgsize: Int, color: Color) {
-    Image(
-        painter, "opis",
-        modifier = Modifier.width(imgsize.dp).height(imgsize.dp).border(1.dp, color)
-    )
-}
+fun App(imgsize: Int, layout3inRow: Boolean = false) {
 
-@Composable
-@Preview
-fun layout2x2(imgsize: Int) {
-    Column(modifier = Modifier.width((imgsize*2).dp).height((imgsize*2).dp)) {
-        var imageName by remember { mutableStateOf("") }
-        var filePicked by remember { mutableStateOf(false) } // UI redraw is triggered when value changes
-        if (!filePicked) {
-            imageName = pickFile()
-            println("\"$imageName\" chosen.")
-            filePicked = true
-        }
-        else { println("LaunchedEffect() again") }
-        Row(modifier = Modifier.fillMaxWidth()) {
-            Image(getPainter(imageName), "opis",
-                modifier = Modifier.width(imgsize.dp).height(imgsize.dp).border(1.dp, Color.Red)
-                //modifier = Modifier.drawBehind {}
-            )
-            Image(getPainter(imageName), "opis",
-                modifier = Modifier.width(imgsize.dp).height(imgsize.dp).border(1.dp, Color.Green)
-            )
-        }
-        Row(modifier = Modifier.fillMaxWidth()) {
-            Image(getPainter(imageName), "opis",
-                modifier = Modifier.width(imgsize.dp).height(imgsize.dp).border(1.dp, Color.Blue)
-            )
-            uiSliders(imgsize, false)
-        }
+    // get modifier
+    val modif = if (layout3inRow) {
+        Modifier.width((imgsize * 3).dp).height((imgsize + 60).dp) // 3+1 modifier
+    } else {
+        Modifier.width((imgsize * 2).dp).height((imgsize * 2).dp) // 2x2 modifier
     }
-}
 
-@Composable
-@Preview
-fun layout3plus1(imgsize: Int) {
-    Column(modifier = Modifier.width((imgsize*3).dp).height((imgsize+60).dp)) {
-        var imageName by remember { mutableStateOf("") }
-        var filePicked by remember { mutableStateOf(false) }
-        if (!filePicked) {
-            imageName = pickFile()
-            println("\"$imageName\" chosen.")
-            filePicked = true
-        }
-        else { println("LaunchedEffect() again") }
-        Box {
-            Row(modifier = Modifier.fillMaxWidth()) {
-                image(getPainter(imageName), imgsize, Color.Red)
-                image(getPainter(imageName), imgsize, Color.Green)
-                image(getPainter(imageName), imgsize, Color.Blue)
+    // Actual UI:
+    MaterialTheme {
+        Column(modifier = modif) {
+            val imageName = "bounce.jpg" // C:\Users\Wojtek\Documents\Programy_IntelliJ\mediview\
+            var filePicked by remember { mutableStateOf(false) } // UI redraw is triggered when value changes
+
+            // state and trigger function for refreshing UI (when state changes)
+            //var state by remember { mutableStateOf(0) }
+            //val trigger: () -> Unit = { state++ }
+            //var imageBitmap: ImageBitmap? by remember { mutableStateOf(null) }
+
+            //val manager = UIManager(imageBitmap)
+            var manager: UIManager by remember { mutableStateOf(UIManager()) }
+            if (!filePicked) {
+                //imageName = pickFile()
+                //println("\"$imageName\" chosen.")
+                manager.loadDicom()
+                filePicked = true
+            } else {
+                println("LaunchedEffect() again")
             }
-        }
-        Box(modifier = Modifier.fillMaxSize()) { uiSliders(imgsize, true) }
-    }
-}
 
-fun pickFile(): String {
-    val dialog = FileDialog(null as Frame?, "Select File to Open", FileDialog.LOAD)
-    dialog.isVisible = true
-    //return File(dialog.directory, dialog.file).toString()
-    return dialog.directory + dialog.file
+            if (layout3inRow) { // 3+1 window
+                Box {
+                    Row(modifier = Modifier.fillMaxWidth()) {
+                        Image(
+                            choosePainter(manager.getImage(View.SLICE), imageName),
+                            "slice XY",
+                            modifier = Modifier.width(imgsize.dp).height(imgsize.dp).border(1.dp, Color.Red)
+                        )
+                        Image(
+                            choosePainter(manager.getImage(View.TOP), imageName),
+                            "top ZX",
+                            modifier = Modifier.width(imgsize.dp).height(imgsize.dp).border(1.dp, Color.Green)
+                        )
+                        Image(
+                            choosePainter(manager.getImage(View.SIDE), imageName),
+                            "side ZY",
+                            modifier = Modifier.width(imgsize.dp).height(imgsize.dp).border(1.dp, Color.Blue)
+                        )
+                    }
+                }
+                Box(modifier = Modifier.fillMaxSize()) { uiSliders(imgsize, true, manager::sliderChange) }
+            } // end 3+1
+            else { // 2x2 window
+                Row(modifier = Modifier.fillMaxWidth()) {
+                    Image(
+                        choosePainter(manager.getImage(View.SLICE), imageName),
+                        "slice XY",
+                        modifier = Modifier.width(imgsize.dp).height(imgsize.dp).border(1.dp, Color.Red)
+                        //modifier = Modifier.drawBehind {}
+                    )
+                    Image(
+                        choosePainter(manager.getImage(View.TOP), imageName),
+                        "top ZX",
+                        modifier = Modifier.width(imgsize.dp).height(imgsize.dp).border(1.dp, Color.Green)
+                    )
+                }
+                Row(modifier = Modifier.fillMaxWidth()) {
+                    Image(
+                        choosePainter(manager.getImage(View.SIDE), imageName),
+                        "side ZY",
+                        modifier = Modifier.width(imgsize.dp).height(imgsize.dp).border(1.dp, Color.Blue)
+                    )
+                    uiSliders(imgsize, false, manager::sliderChange)
+                }
+            } // end 2x2
+
+        } // main column end
+    } // theme end
 }
 
 @Composable
@@ -168,7 +155,7 @@ fun main() = application {
     val imgsize = 512
     val use3inRowLayout = true
     val state = rememberWindowState(size = DpSize.Unspecified)
-    Window(onCloseRequest = ::exitApplication, title = "MediView by wojkuzb", state = state) {
+    Window(onCloseRequest = ::exitApplication, title = Config.windowName, state = state) {
         App(imgsize, use3inRowLayout)
     }
 }

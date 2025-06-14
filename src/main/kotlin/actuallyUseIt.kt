@@ -63,7 +63,7 @@ fun loadDicomData(): ImageAndData<ArrayOps> {
     val scaleZ = if( Config.interpolateByDicomValue ) InterpretData.interpretZScaleFactor(slThk) else 512.0 / imgAndDataList.size
 
     // Build 3D Array
-    val array3D = ArrayOps.Array3DBuilder().addAll(imgAndDataList).create((wthDat.value as UInt).toInt())
+    val array3D = ArrayOps.Array3DBuilder().addAllIAD(imgAndDataList).create((wthDat.value as UInt).toInt())
 
     // 6. interpolate z axis
     array3D.interpolateOverZ(
@@ -91,6 +91,8 @@ fun loadDicomData(): ImageAndData<ArrayOps> {
 
     // 9. convert to Multik's 3D array
     //val array = array3D.convertMultik(whd) // ???
+
+    println("Processing images finished.")
 
     return ImageAndData<ArrayOps>(oneDataMap, array3D)
 }

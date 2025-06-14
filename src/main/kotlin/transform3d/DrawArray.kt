@@ -6,7 +6,7 @@ import org.jetbrains.skia.Bitmap
 import org.jetbrains.skia.ColorAlphaType
 import org.jetbrains.skia.ColorType
 import org.jetbrains.skia.ImageInfo
-import kotlin.experimental.and
+import kotlin.math.round
 
 /** Short value to RGBA value */
 fun transformPixels(source: ShortArray): ByteArray {
@@ -35,8 +35,33 @@ fun rawByteArrayToImageBitmap(bytes: ByteArray, width: Int, height: Int, bytesPe
     return skiaBitmap.asComposeImageBitmap()
 }
 
+enum class View {
+    SLICE,  // xy
+    SIDE,   // zy
+    TOP     // zx
+}
 // TODO array to ImageBitmap
 // (on ImageAndData<ArrayOps>)
+/** @param depth value from 0.0 to 1.0 */
+fun getComposeImage(imgAndData: ImageAndData<ArrayOps>, view: View, depth: Double): ImageBitmap {
+    val imgArr = imgAndData.imageArray
+    val sizes = imgArr.whd
+    val depthToIndex = { depth: Double, size: Int -> round(depth * size).toInt() }
+    val shArrArr = when(view) {
+        View.SLICE -> imgArr.zyx[depthToIndex(depth, sizes.depth)]
+        View.SIDE -> imgArr.xyz[depthToIndex(depth, sizes.width)]
+        View.TOP -> imgArr.yxz[depthToIndex(depth, sizes.height)]
+    }
+
+    val imageBitmap = rawByteArrayToImageBitmap(
+        transformPixels(shArrArr.flatten().toShortArray()), shArrArr[0].size, shArrArr.size, 4
+    )
+    return imageBitmap
+}
+fun getComposeImage(imgAndData: ImageAndData<ArrayOps>): ImageBitmap {
+    //
+    TODO()
+}
 
 // TODO on ArrayOps:
 // combine valuesAtIndices and getAnyOrientationSlice to get slice in any orientation

@@ -6,4 +6,8 @@ class WidthHeightDepth(val width: Int, val height: Int, val depth: Int) {
             return WidthHeightDepth(width.toInt(), height.toInt(), depth.toInt())
         }
     }
+
+    override fun toString(): String {
+        return "width $width, height $height, depth $depth"
+    }
 }

@@ -37,11 +37,11 @@ class ArrayOps(array: Array<Array<Array<Short>>>) {
             list.add(imageAndData.toTypedArray())
             return this
         }
+        /** add all image and data. returns itself */
+        fun addAllIAD(imageAndDataList: List<ImageAndData<ShortArray>>) = addAll(imageAndDataList.map { it.imageArray })
         /** returns itself */
-        fun addAll(imageAndDataList: List<ImageAndData<ShortArray>>) = addAll(imageAndDataList.map { it.imageArray })
-        /** returns itself */
-        fun addAll(imageAndDataList: List<ShortArray>): Array3DBuilder {
-            list.addAll(imageAndDataList.map { it.toTypedArray() })
+        fun addAll(imageList: List<ShortArray>): Array3DBuilder {
+            list.addAll(imageList.map { it.toTypedArray() })
             return this
         }
         fun create(rowWidth: Int): ArrayOps {
