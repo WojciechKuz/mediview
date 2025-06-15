@@ -12,7 +12,7 @@ import dicom.tagAsUInt
  * @param warnings if print any warnings. */
 class DataRead(private val warnings: Boolean = true) {
 
-    companion object {
+    /*companion object {
         var said = 0
 
         fun sayOnce(say: () -> Unit) {
@@ -21,7 +21,7 @@ class DataRead(private val warnings: Boolean = true) {
                 said++
             }
         }
-    }
+    }*/
 
     private fun tryDetermineType(v: DicomByteData): DicomDataElement<out Any> {
         val result = safeDetermineDataType(v)
@@ -120,7 +120,7 @@ class DataRead(private val warnings: Boolean = true) {
 
     /** ⚠ Call ONLY for OB of undefined length. Will determine the length and set ByteArray */
     private fun determineOBLength(cursor: DicomCursor, obTag: DicomTag, createUntil: (DicomTag) -> Boolean  = {false}): DicomByteData {
-        sayOnce { println("Determine OB/OW length") }
+        //sayOnce { println("Determine OB/OW length") }
 
         // tag already read, now read value
         if(DicomTag.canReadTag(cursor) != 0u) {

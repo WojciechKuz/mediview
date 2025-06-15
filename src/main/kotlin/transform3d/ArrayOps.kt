@@ -9,16 +9,20 @@ import dev.romainguy.kotlin.math.Float3
 import dev.romainguy.kotlin.math.Float4
 import dev.romainguy.kotlin.math.rotation
 import kotlin.collections.flatten
+import kotlin.collections.get
 import kotlin.math.ceil
 import kotlin.math.floor
 import kotlin.math.sin
 
 /** @param array default it's Z.Y.X */
 class ArrayOps(array: Array<Array<Array<Short>>>) {
+    init {
+        println("constructed ArrayOps with sizes: z ${array.size}, y ${array[0].size}, x ${array[0][0].size}")
+    }
     /** default is Z.Y.X */
     var array: Array<Array<Array<Short>>> = array
-        private set
-    val whd = WidthHeightDepth(
+        private set // TODO when set update size
+    var whd = WidthHeightDepth(
         array[0][0].size,
         array[0].size,
         array.size,
@@ -29,6 +33,13 @@ class ArrayOps(array: Array<Array<Array<Short>>>) {
     class Array3DBuilder() {
         private var list: MutableList<Array<Short>> = mutableListOf()
         fun getList() = list.toList()
+        /*var printed = 0
+        fun sayOnce(say: () -> Unit) {
+            if(printed==0) {
+                say()
+                printed++
+            }
+        }*/
 
         /** returns itself */
         fun add(imageAndData: ImageAndData<ShortArray>) = add(imageAndData.imageArray)
@@ -45,10 +56,11 @@ class ArrayOps(array: Array<Array<Array<Short>>>) {
             return this
         }
         fun create(rowWidth: Int): ArrayOps {
-            val immutList = list.toList()
             return ArrayOps(
                 Array3D(list.size) { zi ->
-                    list[zi].splitTo(rowWidth)
+                    val splitArr = list[zi].splitTo(rowWidth) // list[zi] is Array<Short> (yx)
+                    //sayOnce { println("${list.size} times split array from ${list[zi].size} to ${splitArr[0].size}x${splitArr.size} using row width of $rowWidth.") }
+                    splitArr
                 }
             )
         }
@@ -77,7 +89,7 @@ class ArrayOps(array: Array<Array<Array<Short>>>) {
             val pieceCount = this.size / pieceLength
             return Array<Array<T>>(pieceCount) { mainArrI ->
                 Array<T>(pieceLength) { pieceArrI ->
-                    this[mainArrI *pieceLength + pieceArrI]
+                    this[mainArrI * pieceLength + pieceArrI]
                 }
             }
         }

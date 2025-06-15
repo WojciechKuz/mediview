@@ -18,7 +18,8 @@ Wybór pliku z dowolnego folderu, nie tylko resources!
 TODO:
 
 - wyświetl przekrój w main, daj to na ekran!
-    FIXME za małę wyświetla
+    FIXDONE wysokość jest podwojona
+    FIXME whd zawiera dane sprzed przetworzenia obrazka
 
 - regulacja zakresu
 
@@ -29,4 +30,29 @@ Rzeczy pozostałe do uwzględnienia:
 !        "[0028 0107]", // -> Largest Image Pixel Value  (MAX VAL)
 
 
-Zadanie 2
+--- Zadanie 2:
+- 3 rzuty: transversal, sagittal, coronal. OK, to po prostu xy zy zx
+
+- tryby:
+    - none - jak w zad 1
+    - średnia
+    - max
+    - first hit - pierwsza wartość większa od: wartość wybrana suwakiem. Gdy piksel spełnia wymóg w trybie none, to kolor czerwony
+- dodatkowe wymagania:
+    - zrównoleglone liczenie projekcji
+    - obrót wokół środka
+    - podświetlenie first hit
+    - eksport animacji sekwencja png lub gif
+- animacja - obrót o wybrany kąt i liczba klatek
+    - na wszystkich 3 przekrojach?
+    - wyświetl animację
+    - kontrola animacji:
+      - suwak czasu, przewijanie
+      - play/pause
+      - regulacja prędkości
+      - tryb ping-pong
+      - wizualizacja kąta obrotu: podane stopnie albo wskaźnik
+
+Ok, obroty/projekcje przez macierze.
+Tylko eksport animacji
+I te tryby

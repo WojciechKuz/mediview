@@ -70,8 +70,10 @@ class UIManager(var writeImgRef: ImageBitmap? = null) {
             return
         }
         for(key in InterpretData.necessaryInfo) {
-            if(key == tagAsUInt("(7FE0,0010)"))
+            if(key == tagAsUInt("(7FE0,0010)")) {
+                println("Tag (7FE0,0010) is not supposed to be in tag to data map!")
                 continue
+            }
             val value = info[key]
             println(value.toString())
         }

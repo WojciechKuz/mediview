@@ -5,6 +5,7 @@ import dicom.OBItemList
 import dicom.OWItemList
 import dicom.TagToDataMap
 import dicom.adaptGreyInfo
+import dicom.jpegByteArrayToRawByteArray
 import dicom.jpegToByteArray
 import dicom.tagAsUInt
 import org.jetbrains.skia.ImageInfo
@@ -49,7 +50,7 @@ object InterpretData {
         }
         val strVal =  sliceDist.value as String
         val sliceThickness = strVal.trim().toDouble()
-        return 1.0 / sliceThickness
+        return /* 1.0 / */ sliceThickness
     }
 
     val columnsTag = tagAsUInt("(0028,0011)") // x, width
@@ -84,8 +85,13 @@ object InterpretData {
         }
         val rawImage = when(transferSyntaxUID(trStxData)) {
             ImageType.JPEG -> {
-                sayOnce { println("Decode from JPEG") }
-                jpegToByteArray(imageBytes)
+
+                val jpegba = jpegByteArrayToRawByteArray(imageBytes)
+                sayOnce {
+                    println("Decode from JPEG")
+                    println("got ${jpegba?.size} bytes of JPEG")
+                }
+                jpegba
             }
             else -> {
                 sayOnce { println("No need to decode") }

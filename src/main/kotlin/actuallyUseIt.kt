@@ -1,6 +1,7 @@
 
 import dicom.TagToDataMap
 import dicom.filestructure.DataRead
+import dicom.hexString
 import dicom.tagAsUInt
 import transform3d.ArrayOps
 import transform3d.Config
@@ -10,6 +11,7 @@ import transform3d.InterpretData
 import transform3d.InterpretData.columnsTag
 import transform3d.InterpretData.rowsTag
 import transform3d.tagNotFoundErr
+import kotlin.collections.toString
 
 private fun directory() = ReadHelp.pickDirAndDicom().first
 
@@ -42,7 +44,7 @@ fun loadDicomData(): ImageAndData<ArrayOps> {
     // 3. sort images
     val sortedImagesData = ImageSorter.sortByInstanceNumber(imagesDataMap)
     //val sortedImagesData = sortBySliceLocation(imagesDataMap)
-    //val sortedImagesData = sortByImagePosition(imagesDataMap) // TODO sort by image position
+    //val sortedImagesData = sortByImagePosition(imagesDataMap)
     if(sortedImagesData.isEmpty()) throw Exception("Error: After sorting, the array is empty!")
 
     // 4. filter images. All should have same series number
@@ -60,7 +62,10 @@ fun loadDicomData(): ImageAndData<ArrayOps> {
     val hthDat = oneDataMap[rowsTag]?: throw tagNotFoundErr(rowsTag)
 
     val slThk = oneDataMap[tagAsUInt("[0018 0050]")]?: throw tagNotFoundErr("[0018 0050]")
-    val scaleZ = if( Config.interpolateByDicomValue ) InterpretData.interpretZScaleFactor(slThk) else 512.0 / imgAndDataList.size
+    val scaleZ = if( Config.interpolateByDicomValue ) InterpretData.interpretZScaleFactor(slThk) else {
+        println("backup scaleZ")
+        (wthDat.value as UInt).toDouble() / imgAndDataList.size
+    }
 
     // Build 3D Array
     val array3D = ArrayOps.Array3DBuilder().addAllIAD(imgAndDataList).create((wthDat.value as UInt).toInt())

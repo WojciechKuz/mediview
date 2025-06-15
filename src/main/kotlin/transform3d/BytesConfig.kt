@@ -7,13 +7,25 @@ import java.nio.ByteOrder
 
 class BytesConfig(val bitsAllocated: Int, val bitsStored: Int, val highBit: Int, val signed: Boolean = false) {
     companion object {
-        // this couldn't be real constructor as uint and int are the same on JVM, and both constructors would have same signature
+        // this can't be actual constructor as uint and int are the same on JVM, and both constructors would have same signature
         /** Alternative constructor */
         fun constructor(bitsAllocated: UInt, bitsStored: UInt, highBit: UInt, signed: Boolean = false) =
                 BytesConfig(bitsAllocated.toInt(), bitsStored.toInt(), highBit.toInt(), signed)
 
         /** returns number that has given amount of 1's in front and 0's on the back */
         private fun useBits(nof1: Int, nof0: Int = 0): Int = ( (1 shl (nof1+1)) - 1 ) shl nof0 // nof1 + nof0 <= 32, nof1 < 32
+
+        /*var said = 0
+        fun sayOnce(say: () -> Unit) {
+            if(said == 0) {
+                say()
+                said++
+            }
+        }*/
+    }
+
+    override fun toString(): String {
+        return "BytesConfig: allocated $bitsAllocated, stored $bitsStored, high bit $highBit, sign? $signed."
     }
 
     val order: ByteOrder
@@ -82,6 +94,11 @@ private fun ByteArray.readAllByteValues(config: BytesConfig): ShortArray {
     val cursor = DicomCursor(this)
     val byteLength = config.bitsAllocated / 8
     val shArr = ShortArray(this.size / byteLength)
+    /*BytesConfig.sayOnce {
+        println(config)
+        println("Meanwhile, BYTE length is $byteLength")
+        println("${this.size} long byte array will become ${shArr.size} long short array")
+    }*/
     var arrIndex = 0
     while(cursor.hasNext(byteLength)) {
         shArr[arrIndex] = config.getValue(cursor.readNextByteField(byteLength))
