@@ -8,6 +8,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import transform3d.Config
 import transform3d.View
 
 /** Okienko z suwakami.
@@ -56,13 +57,13 @@ private fun getSliderColors(color: Color) = SliderDefaults.colors(
 @Composable
 @Preview
 private fun slidersGroup(imgsize: Int, sliderValChange: (Float, View) -> Unit) {
-    var redSliderPosition by remember { mutableStateOf(128f) }
-    var greenSliderPosition by remember { mutableStateOf(128f) }
-    var blueSliderPosition by remember { mutableStateOf(128f) }
+    var redSliderPosition by remember { mutableStateOf(Config.sliderRange.startVal) }
+    var greenSliderPosition by remember { mutableStateOf(Config.sliderRange.startVal) }
+    var blueSliderPosition by remember { mutableStateOf(Config.sliderRange.startVal) }
     val modifier = Modifier.width(imgsize.dp)
     Slider(
         value = redSliderPosition,
-        valueRange = 0f..256f,
+        valueRange = Config.sliderRange.range,
         onValueChange = {
             redSliderPosition = it
             sliderValChange(it, View.SLICE)
@@ -74,7 +75,7 @@ private fun slidersGroup(imgsize: Int, sliderValChange: (Float, View) -> Unit) {
     )
     Slider(
         value = greenSliderPosition,
-        valueRange = 0f..256f,
+        valueRange = Config.sliderRange.range,
         onValueChange = {
             greenSliderPosition = it
             sliderValChange(it, View.TOP)
@@ -86,7 +87,7 @@ private fun slidersGroup(imgsize: Int, sliderValChange: (Float, View) -> Unit) {
     )
     Slider(
         value = blueSliderPosition,
-        valueRange = 0f..256f,
+        valueRange = Config.sliderRange.range,
         onValueChange = {
             blueSliderPosition = it
             sliderValChange(it, View.SIDE)

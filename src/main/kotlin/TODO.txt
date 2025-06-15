@@ -19,7 +19,10 @@ TODO:
 
 - wyświetl przekrój w main, daj to na ekran!
     FIXDONE wysokość jest podwojona
-    FIXME whd zawiera dane sprzed przetworzenia obrazka
+    FIXDONE whd zawiera dane sprzed przetworzenia obrazka. Aktualizuj wymiary przy zmianie array3d
+    FIXMELATER za dużo komunikatów z UI
+    FIXME obrazek się nie zmienia przy kliknięciu suwaka
+    FIXME powolne ładowanie plików
 
 - regulacja zakresu
 

@@ -88,8 +88,7 @@ object InterpretData {
 
                 val jpegba = jpegByteArrayToRawByteArray(imageBytes)
                 sayOnce {
-                    println("Decode from JPEG")
-                    println("got ${jpegba?.size} bytes of JPEG")
+                    println("Got ${jpegba?.size} bytes of JPEG")
                 }
                 jpegba
             }

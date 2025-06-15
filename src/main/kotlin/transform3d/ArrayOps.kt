@@ -16,18 +16,29 @@ import kotlin.math.sin
 
 /** @param array default it's Z.Y.X */
 class ArrayOps(array: Array<Array<Array<Short>>>) {
-    init {
-        println("constructed ArrayOps with sizes: z ${array.size}, y ${array[0].size}, x ${array[0][0].size}")
-    }
+
     /** default is Z.Y.X */
     var array: Array<Array<Array<Short>>> = array
-        private set // TODO when set update size
-    var whd = WidthHeightDepth(
+        private set(value) {
+            field = value
+            whd = WidthHeightDepth(
+                array[0][0].size,
+                array[0].size,
+                array.size,
+            )
+            //println("modified ArrayOps, sizes: $whd")
+        }
+    var whd: WidthHeightDepth = WidthHeightDepth(
         array[0][0].size,
         array[0].size,
         array.size,
-    )
-    val rowSize: Int; get() = whd.width
+    ); private set
+
+    init {
+        //println("constructed ArrayOps with sizes: $whd")
+    }
+
+    val rowSize: Int; get() = array[0][0].size
 
     // Builder OK, but create 3d array of some library!
     class Array3DBuilder() {

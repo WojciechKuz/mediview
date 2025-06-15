@@ -6,7 +6,6 @@ import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
@@ -57,11 +56,6 @@ fun App(imgsize: Int, layout3inRow: Boolean = false) {
             val imageName = "bounce.jpg" // C:\Users\Wojtek\Documents\Programy_IntelliJ\mediview\
             var filePicked by remember { mutableStateOf(false) } // UI redraw is triggered when value changes
 
-            // state and trigger function for refreshing UI (when state changes)
-            //var state by remember { mutableStateOf(0) }
-            //val trigger: () -> Unit = { state++ }
-            //var imageBitmap: ImageBitmap? by remember { mutableStateOf(null) }
-
             //val manager = UIManager(imageBitmap)
             var manager: UIManager by remember { mutableStateOf(UIManager()) }
             if (!filePicked) {
@@ -93,7 +87,7 @@ fun App(imgsize: Int, layout3inRow: Boolean = false) {
                         )
                     }
                 }
-                Box(modifier = Modifier.fillMaxSize()) { uiSliders(imgsize, true, manager::sliderChange) }
+                Box(modifier = Modifier.fillMaxSize()) { uiSliders(imgsize, true, manager::viewSliderChange) }
             } // end 3+1
             else { // 2x2 window
                 Row(modifier = Modifier.fillMaxWidth()) {
@@ -115,7 +109,7 @@ fun App(imgsize: Int, layout3inRow: Boolean = false) {
                         "side ZY",
                         modifier = Modifier.width(imgsize.dp).height(imgsize.dp).border(1.dp, Color.Blue)
                     )
-                    uiSliders(imgsize, false, manager::sliderChange)
+                    uiSliders(imgsize, false, manager::viewSliderChange)
                 }
             } // end 2x2
 
@@ -149,10 +143,14 @@ fun whatsWrongWithSlidersExample() {
     )
 }
 
-fun main() = application {
-    val maxSize = Runtime.getRuntime().maxMemory() / 1024/ 1024.0
+fun printMaxMemory() {
+    val maxSize = Runtime.getRuntime().maxMemory() / 1024L / 1024.0
     println("Max memory heap size of program: $maxSize MB")
-    val imgsize = 512
+}
+
+fun main() = application {
+    // printMaxMemory()
+    val imgsize = Config.displayImageSize
     val use3inRowLayout = true
     val state = rememberWindowState(size = DpSize.Unspecified)
     Window(onCloseRequest = ::exitApplication, title = Config.windowName, state = state) {

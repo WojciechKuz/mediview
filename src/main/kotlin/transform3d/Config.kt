@@ -2,10 +2,17 @@ package transform3d
 
 import dev.romainguy.kotlin.math.Float3
 
-@Suppress("ConstPropertyName")
+@Suppress("MayBeConstant")
 object Config {
-    const val gantryDirection = 1 // gantry rotation direction. 1 or -1
-    const val interpolateByDicomValue = true // if to interpolate by dicom value. if false interpolate by 512 / nofImages
+    val gantryDirection = 1 // gantry rotation direction. 1 or -1
+    val interpolateByDicomValue = true // if to interpolate by dicom value. if false interpolate by 512 / nofImages
     val rotateDirection = Float3(1f, 1f, 1f)
-    const val windowName = "feetpic 📷🦶" //"MediView by wojkuzb"
+    val windowName = "feetpic 📷🦶" //"MediView by wojkuzb"
+    val sliderRange = MySliderRange(0f, 256f)
+    val displayImageSize = 512
+}
+class MySliderRange(val start: Float, val end: Float) {
+    val range = start..(end - 1) // do not change
+    val startVal = (end - start) / 2 + start // do not change
+    fun normalizeValue(value: Float) = (value - start) / (end - start) // do not change
 }

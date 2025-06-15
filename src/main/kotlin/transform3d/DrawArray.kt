@@ -43,7 +43,11 @@ enum class View {
 // TODO array to ImageBitmap
 // (on ImageAndData<ArrayOps>)
 /** @param depth value from 0.0 to 1.0 */
-fun getComposeImage(imgAndData: ImageAndData<ArrayOps>, view: View, depth: Double): ImageBitmap {
+fun getComposeImage(imgAndData: ImageAndData<ArrayOps>, view: View, depth: Double): ImageBitmap? {
+    if(depth !in 0f..1f) {
+        println("depth $depth out of range 0.0--1.0")
+        return null
+    }
     val imgArr = imgAndData.imageArray
     val sizes = imgArr.whd
     val depthToIndex = { depth: Double, size: Int -> round(depth * size).toInt() }
@@ -56,7 +60,7 @@ fun getComposeImage(imgAndData: ImageAndData<ArrayOps>, view: View, depth: Doubl
     val imageBitmap = rawByteArrayToImageBitmap(
         transformPixels(shArrArr.flatten().toShortArray()), shArrArr[0].size, shArrArr.size, 4
     )
-    return imageBitmap
+    return imageBitmap // non-null
 }
 fun getComposeImage(imgAndData: ImageAndData<ArrayOps>): ImageBitmap {
     //
