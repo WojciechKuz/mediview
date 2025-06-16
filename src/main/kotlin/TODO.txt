@@ -21,7 +21,9 @@ TODO:
     FIXDONE wysokość jest podwojona
     FIXDONE whd zawiera dane sprzed przetworzenia obrazka. Aktualizuj wymiary przy zmianie array3d
     FIXMELATER za dużo komunikatów z UI
-    FIXME obrazek się nie zmienia przy kliknięciu suwaka
+    FIXDONE obrazek się nie zmienia przy kliknięciu suwaka
+    FIXME gantry w drugą stronę
+    FIXME coś jest nie tak z tym środkowym? wygląda jakby się przesuwał, ale to może od poprzedniego błędu
     FIXME powolne ładowanie plików
 
 - regulacja zakresu

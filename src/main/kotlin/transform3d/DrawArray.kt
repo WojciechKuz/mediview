@@ -40,21 +40,28 @@ enum class View {
     SIDE,   // zy
     TOP     // zx
 }
+val viewDepth = { view: View, sizes: WidthHeightDepth -> when(view) {
+    View.SLICE -> sizes.depth
+    View.SIDE -> sizes.width
+    View.TOP -> sizes.height
+} }
+
 // TODO array to ImageBitmap
 // (on ImageAndData<ArrayOps>)
 /** @param depth value from 0.0 to 1.0 */
-fun getComposeImage(imgAndData: ImageAndData<ArrayOps>, view: View, depth: Double): ImageBitmap? {
+fun getComposeImage(imgAndData: ImageAndData<ArrayOps>, view: View, depth: Float): ImageBitmap? {
     if(depth !in 0f..1f) {
         println("depth $depth out of range 0.0--1.0")
         return null
     }
     val imgArr = imgAndData.imageArray
-    val sizes = imgArr.whd
-    val depthToIndex = { depth: Double, size: Int -> round(depth * size).toInt() }
+    val depthToIndex = { depth: Float, view: View ->
+        round(depth * viewDepth(view, imgArr.whd)).toInt() //.also { println("Get image at index $it") }
+    }
     val shArrArr = when(view) {
-        View.SLICE -> imgArr.zyx[depthToIndex(depth, sizes.depth)]
-        View.SIDE -> imgArr.xyz[depthToIndex(depth, sizes.width)]
-        View.TOP -> imgArr.yxz[depthToIndex(depth, sizes.height)]
+        View.SLICE -> imgArr.zyx[depthToIndex(depth, view)]
+        View.SIDE -> imgArr.xyz[depthToIndex(depth, view)]
+        View.TOP -> imgArr.yxz[depthToIndex(depth, view)]
     }
 
     val imageBitmap = rawByteArrayToImageBitmap(

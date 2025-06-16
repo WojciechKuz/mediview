@@ -11,7 +11,7 @@ import transform3d.getComposeImage
 
 // val trigger: () -> Unit
 
-class UIManager(var writeImgRef: ImageBitmap? = null) {
+class UIManager(val uiImageMap: MutableMap<View, ImageBitmap?>) {
     private var imageAndData: ImageAndData<ArrayOps>? = null
     private var whd: WidthHeightDepth? = null
     fun loadDicom() {
@@ -19,8 +19,19 @@ class UIManager(var writeImgRef: ImageBitmap? = null) {
         whd = imageAndData?.imageArray?.whd
         println("3D array is $whd")
         println()
-        printInfoOnce()
+        //printInfoOnce()
         println()
+        imageAndData?.let {
+            uiImageMap.forEach { (key, value) -> uiImageMap[key] = getImage(key)?: uiImageMap[key] }
+            if(it.imageArray.checkIfAllTheSame())
+                println("All images are the same :(")
+            else
+                println("OK, images differ from each other")
+            if(it.imageArray.isSelectedPixelTheSame(true)) // println("selectedPixel is " + it.imageArray.isSelectedPixelTheSame(true).toString())
+                println("Selected pixel is the same on all images :(")
+            else
+                println("OK, selected pixel values differ from each other")
+        }
     }
     fun getSliceImage() {}
     fun onClick() {}
@@ -34,17 +45,22 @@ class UIManager(var writeImgRef: ImageBitmap? = null) {
         }
         //println("$view slider change, $depth256. SliceD $depthSlice, SideD $depthSide, TopD $depthTop")
 
+        uiImageMap[view] = getImage(view)
+        /*
         if(sliderChange%3==0) {
             println()
-            getImage(view)
+            // do stuff
         }
         sliderChange++
+        z*/
 
     }
-    var depthSlice = 0f // 0-1 range
-    var depthSide = 0f
-    var depthTop = 0f
-    /** For starting view */
+    val startVal = { Config.sliderRange.normalizeValue(Config.sliderRange.startVal) }
+    var depthSlice = startVal() // 0-1 range
+    var depthSide = startVal()
+    var depthTop = startVal()
+
+    /**  */
     fun getImage(view: View): ImageBitmap? {
         val depth = when(view) {
             View.SLICE -> depthSlice
@@ -59,13 +75,16 @@ class UIManager(var writeImgRef: ImageBitmap? = null) {
         //println("getImage")
         if(imageAndData == null)
             println("imageAndData is null")
-        writeImgRef = imageAndData?.let { // when not null and no other process writes
-            getComposeImage(it, view, depth.toDouble())
+        val writeImgRef: ImageBitmap? = imageAndData?.let { // when not null and no other process writes
+            println("get compose img")
+            getComposeImage(it, view, depth)
         }
         writeImgRef?.let {
             println("Got $view image ${if(maxDepth != null) (depth * maxDepth).toInt() else depth} of size ${it.width}x${it.height}")
         }
         println()
+        //if(writeImgRef != null)
+        uiImageMap[view] = writeImgRef
         return writeImgRef
     }
     //fun writeImage(view: View) { writeImgRef = getImage(view) }

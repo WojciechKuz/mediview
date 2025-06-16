@@ -140,12 +140,12 @@ class ArrayOps(array: Array<Array<Array<Short>>>) {
         return this
     }
 
-    /** Negative rotationOrigin means use `y_size - 1`. */
+    /** Negative rotationOrigin means use `y_size/2`, not `y_size - 1`. */
     fun shearByGantry(gantryAngle: Double, width: Int, move: (Array<Short>, Double) -> Array<Short>, rotationOrigin: Int = -1): ArrayOps {
         val rotCt = if(rotationOrigin < 0)
-            oldform[0].size/width - 1 else rotationOrigin
+            /*oldform[0].size/width - 1*/ whd.height - 1 /*whd.height/2*/ else rotationOrigin
+        val radiansAngle = Math.toRadians(gantryAngle)
         val moveRow = { yi: Int ->
-            val radiansAngle = Math.toRadians(gantryAngle)
             sin(radiansAngle) * (rotationOrigin - yi)
         }
 
@@ -179,10 +179,11 @@ class ArrayOps(array: Array<Array<Array<Short>>>) {
         return array3d
 
     }*/
+
     /** oldform is z.yx */
     var oldform: Array<Array<Short>> // z.yx
         get() = array.doOnSecond { yxArr -> yxArr.flattenToTyped() }
-        set(oldF: Array<Array<Short>>) {
+        set(oldF) {
             array = oldF.doOnSecond { yxArr -> yxArr.splitTo(rowSize) }
         }
     val xyz: Array3D; get() = yxz.rotate()
@@ -192,9 +193,8 @@ class ArrayOps(array: Array<Array<Array<Short>>>) {
     val zxy: Array3D; get() = zyx.doOnSecond{ yxArr -> yxArr.rotate() }
     val zyx: Array3D; get() = array // default
 
-    fun indicesAtZSlice(zi: Float) = Array(whd.height) { yi ->
+    private fun indicesAtZSlice(zi: Float) = Array(whd.height) { yi ->
         Array(whd.width) { xi ->
-            //mk.d1array<Double>(4) { i -> vec[i] }
             Float4(zi, yi.toFloat(), xi.toFloat(), 1f)
         }
     }
@@ -289,6 +289,18 @@ class ArrayOps(array: Array<Array<Array<Short>>>) {
             step4
         }
         return rotatedSlice
+    }
+
+    fun checkIfAllTheSame(): Boolean {
+        val arr = xyz.flattenToTyped() // x.y.z -> xy.z
+        return arr.all { zArr -> zArr.all { it == zArr[0] } }
+    }
+    fun isSelectedPixelTheSame(doPrint: Boolean = false): Boolean {
+        val arr = xyz.flattenToTyped() // x.y.z -> xy.z
+        val zValsOfSelectedPx = arr[Config.selectedPixel].toList()
+        if(doPrint)
+            println("zValsOfSelectedPx: $zValsOfSelectedPx")
+        return zValsOfSelectedPx.all { it == zValsOfSelectedPx[0] }
     }
 }
 typealias Array1D = Array<Short>

@@ -75,6 +75,7 @@ fun loadDicomData(): ImageAndData<ArrayOps> {
         scaleZ, // computed from pixel size/spacing whatever
         Interpolation::rescaleBL
     )
+    //println("selectedPixel is " + array3D.isSelectedPixelTheSame().toString() + " step 6")
 
     val whd = array3D.whd
 
@@ -85,7 +86,8 @@ fun loadDicomData(): ImageAndData<ArrayOps> {
     val gantryDat = oneDataMap[gantryTag]?: throw tagNotFoundErr(gantryTag)
     val gantryAngle = InterpretData.interpretGantryAkaDetectorTilt(gantryDat)
     array3D.shearByGantry(gantryAngle, whd.width,
-        Interpolation::moveBL, whd.height - 1)
+        Interpolation::moveBL, whd.height/2)
+    //println("selectedPixel is " + array3D.isSelectedPixelTheSame().toString() + " step 7")
 
     // 8. rescale hounsfield
     // get tag rescale slope, rescale intercept
@@ -93,6 +95,7 @@ fun loadDicomData(): ImageAndData<ArrayOps> {
     val rescSlDat = oneDataMap[tagAsUInt("[0028 1053]")]?: throw tagNotFoundErr(tagAsUInt("[0028 1053]"))
     val rescaleFunction = InterpretData.interpretRescale(rescItDat, rescSlDat)
     array3D.transformEachPixel(rescaleFunction)
+    //println("selectedPixel is " + array3D.isSelectedPixelTheSame().toString() + " step 8")
 
     // 9. convert to Multik's 3D array
     //val array = array3D.convertMultik(whd) // ???

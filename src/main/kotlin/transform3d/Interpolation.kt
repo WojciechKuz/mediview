@@ -12,7 +12,7 @@ object Interpolation {
         val targetSize = (dataList.size * scaleFactor).toInt() // round? ceil? floor?
         val target = Array(targetSize) { ti ->
             dataList[
-                round( ti * scaleFactor ).toInt()
+                round( ti / scaleFactor ).toInt()
             ]
         }
         return target
@@ -27,7 +27,7 @@ object Interpolation {
     fun rescaleBL(dataList: Array<Short>, scaleFactor: Double): Array<Short> {
         val targetSize = (dataList.size * scaleFactor).toInt() // round? ceil? floor?
         val target = Array(targetSize) { ti ->
-            val oldI = ti * scaleFactor
+            val oldI = ti / scaleFactor
             linearInterpolation(dataList, oldI)
         }
         return target

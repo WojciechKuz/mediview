@@ -4,8 +4,10 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.snapshots.SnapshotStateMap
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
@@ -13,6 +15,9 @@ import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
 import transform3d.Config
 import transform3d.View
+import kotlin.collections.getValue
+import kotlin.collections.setValue
+
 /*
 import coil3.PlatformContext
 import coil3.request.ImageRequest
@@ -57,7 +62,17 @@ fun App(imgsize: Int, layout3inRow: Boolean = false) {
             var filePicked by remember { mutableStateOf(false) } // UI redraw is triggered when value changes
 
             //val manager = UIManager(imageBitmap)
-            var manager: UIManager by remember { mutableStateOf(UIManager()) }
+//            var uiImageMap: MutableMap<View, ImageBitmap?> by remember { mutableStateOf( mutableMapOf<View, ImageBitmap?>(
+//                View.SLICE to null as ImageBitmap?,
+//                View.SIDE to null as ImageBitmap?,
+//                View.TOP to null as ImageBitmap?
+//            ) ) }
+            val uiImageMap: MutableMap<View, ImageBitmap?> = remember { mutableStateMapOf(
+                View.SLICE to null as ImageBitmap?,
+                View.SIDE to null as ImageBitmap?,
+                View.TOP to null as ImageBitmap?
+            ) }
+            var manager: UIManager by remember { mutableStateOf(UIManager(uiImageMap)) }
             if (!filePicked) {
                 //imageName = pickFile()
                 //println("\"$imageName\" chosen.")
@@ -71,17 +86,17 @@ fun App(imgsize: Int, layout3inRow: Boolean = false) {
                 Box {
                     Row(modifier = Modifier.fillMaxWidth()) {
                         Image(
-                            choosePainter(manager.getImage(View.SLICE), imageName),
+                            choosePainter(uiImageMap[View.SLICE], imageName),
                             "slice XY",
                             modifier = Modifier.width(imgsize.dp).height(imgsize.dp).border(1.dp, Color.Red)
                         )
                         Image(
-                            choosePainter(manager.getImage(View.TOP), imageName),
+                            choosePainter(uiImageMap[View.TOP], imageName),
                             "top ZX",
                             modifier = Modifier.width(imgsize.dp).height(imgsize.dp).border(1.dp, Color.Green)
                         )
                         Image(
-                            choosePainter(manager.getImage(View.SIDE), imageName),
+                            choosePainter(uiImageMap[View.SIDE], imageName),
                             "side ZY",
                             modifier = Modifier.width(imgsize.dp).height(imgsize.dp).border(1.dp, Color.Blue)
                         )

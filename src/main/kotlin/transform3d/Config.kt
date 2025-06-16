@@ -10,6 +10,7 @@ object Config {
     val windowName = "feetpic 📷🦶" //"MediView by wojkuzb"
     val sliderRange = MySliderRange(0f, 256f)
     val displayImageSize = 512
+    val selectedPixel = (512 * 3 / 4) * 512 + (512 * 1 / 2)
 }
 class MySliderRange(val start: Float, val end: Float) {
     val range = start..(end - 1) // do not change
