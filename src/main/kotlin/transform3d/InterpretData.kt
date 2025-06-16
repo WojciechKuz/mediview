@@ -122,19 +122,24 @@ object InterpretData {
     /** dataMap (with image as one of tags) ---> ImageData structure, which stores image and rest of the data separately.
      * Also, new structure stores image as 2DShortArray. Rest of the data is still stored in TagToDataMap. */
     fun dataMapToImageData(dataMap: TagToDataMap): ImageAndData<ShortArray> {
+        return ImageAndData<ShortArray>(
+            removeImageData(dataMap),
+            dataMapToImage(dataMap)
+        )
+    }
+
+    /** dataMap (with image as one of tags) ---> image as ShortArray.
+     * Discards other data! */
+    fun dataMapToImage(dataMap: TagToDataMap): ShortArray {
         val pxDat = dataMap[pixelDataTag]?: throw tagNotFoundErr(pixelDataTag)
         val trxDat = dataMap[transferSyntaxUIDTag]?: throw tagNotFoundErr(transferSyntaxUIDTag)
-        val wthDat = dataMap[columnsTag]?: throw tagNotFoundErr(columnsTag)
-        val hthDat = dataMap[rowsTag]?: throw tagNotFoundErr(rowsTag)
+        //val wthDat = dataMap[columnsTag]?: throw tagNotFoundErr(columnsTag)
+        //val hthDat = dataMap[rowsTag]?: throw tagNotFoundErr(rowsTag)
 
         val imageBytes = getRawImage(pxDat, trxDat)
-        val removedImageDataMap = removeImageData(dataMap)
-        val bytesConfig = getBytesConfig(removedImageDataMap)
+        val bytesConfig = getBytesConfig(dataMap)
 
-        return ImageAndData<ShortArray>(
-            removedImageDataMap,
-            pixelsToShort(imageBytes, bytesConfig)
-        )
+        return pixelsToShort(imageBytes, bytesConfig)
     }
 
     fun image1Dto2D(array1D: ShortArray, width: UInt, height: UInt) = image1Dto2D(array1D.toTypedArray(), width.toInt(), height.toInt())

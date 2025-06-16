@@ -90,7 +90,7 @@ fun pixelsToShort(bytes: ByteArray, config: BytesConfig): ShortArray {
 
 /** Can't process 1 bit values!!!
  * ByteArray -> ShortArray as configured in BytesConfig */
-private fun ByteArray.readAllByteValues(config: BytesConfig): ShortArray {
+private fun ByteArray.oldReadAllByteValues(config: BytesConfig): ShortArray {
     val cursor = DicomCursor(this)
     val byteLength = config.bitsAllocated / 8
     val shArr = ShortArray(this.size / byteLength)
@@ -106,6 +106,24 @@ private fun ByteArray.readAllByteValues(config: BytesConfig): ShortArray {
     }
     return shArr
 }
+
+/** Can't process 1 bit values!!!
+ * ByteArray -> ShortArray as configured in BytesConfig */
+private fun ByteArray.readAllByteValues(config: BytesConfig): ShortArray {
+    val cursor = DicomCursor(this)
+    val byteLength = config.bitsAllocated / 8
+    val shArr = ShortArray(this.size / byteLength) { arrIndex ->
+        if(cursor.hasNext(byteLength))
+            config.getValue(cursor.readNextByteField(byteLength))
+        else 0
+    }
+    /*BytesConfig.sayOnce {
+        println(config)
+        println("Meanwhile, BYTE length is $byteLength")
+        println("${this.size} long byte array will become ${shArr.size} long short array")
+    }*/
+    return shArr
+}
 /** Processes only 1 bit values!!!
  * ByteArray bits -> ShortArray */
 private fun ByteArray.readAll1BitValues(): ShortArray {
@@ -113,7 +131,7 @@ private fun ByteArray.readAll1BitValues(): ShortArray {
         fun getBit(byte: Byte, whichBit: Int): Int = if(
             (  (1 shl whichBit) and byte.toU().toInt()  ) != 0
         ) 1 else 0
-        return ShortArray(8).mapIndexed { index, _ -> getBit(this, index).toShort() }
+        return List<Short>(8) { index -> getBit(this, index).toShort() }
     }
 
     return this.flatMap { b -> b.toBitArray() }.toShortArray()

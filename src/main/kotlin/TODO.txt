@@ -22,9 +22,14 @@ TODO:
     FIXDONE whd zawiera dane sprzed przetworzenia obrazka. Aktualizuj wymiary przy zmianie array3d
     FIXMELATER za dużo komunikatów z UI
     FIXDONE obrazek się nie zmienia przy kliknięciu suwaka
-    FIXME gantry w drugą stronę
+    ?FIXMAYBEDONE? gantry w drugą stronę
     FIXME coś jest nie tak z tym środkowym? wygląda jakby się przesuwał, ale to może od poprzedniego błędu
-    FIXME powolne ładowanie plików
+    FIXME powolne ładowanie plików.
+    WYDAJNOŚĆ:
+    - Zrównoleglij.
+    - potem może mniej konwersji. Jeśli możliwe - najlepiej brak konwersji, ShortArray, najgorzej Array<Short>.
+    - Te niskopoziomowe funkcje bez użycia kolekcji: endianIntParser (400ms dla 60 obrazków), transformEachPixel
+    - ostatnia hash mapa zamiast mapy.
 
 - regulacja zakresu
 

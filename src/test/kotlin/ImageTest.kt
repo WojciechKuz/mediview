@@ -34,4 +34,14 @@ class ImageTest {
         val img = rawByteArrayToImageBitmap(bytes, bitmap.width, bitmap.height, 4)
         println("Got image back!")
     }
+
+    @Test
+    fun testIsArrayWritable() {
+        val arr = arrayOf(50, 60, 70, 80, 90)
+        println(arr.toList().toString())
+        for (i in arr.indices) {
+            arr[i] = arr[i] + 2
+        }
+        println(arr.toList().toString())
+    }
 }

@@ -9,7 +9,14 @@ import org.jetbrains.skia.ImageInfo
 import kotlin.math.round
 
 /** Short value to RGBA value */
-fun transformPixels(source: ShortArray): ByteArray {
+fun transformPixelsToRGBA(source: ShortArray): ByteArray {
+    return source.flatMap { sh ->
+        val byte = (sh / 256).toByte()
+        listOf(byte, byte, byte, 0xFF.toByte()) // R, G, B as grey before, but full alpha
+    }.toByteArray()
+}
+/** Short value to RGBA value */
+fun transformPixelsToRGBA(source: List<Short>): ByteArray {
     return source.flatMap { sh ->
         val byte = (sh / 256).toByte()
         listOf(byte, byte, byte, 0xFF.toByte()) // R, G, B as grey before, but full alpha
@@ -46,7 +53,6 @@ val viewDepth = { view: View, sizes: WidthHeightDepth -> when(view) {
     View.TOP -> sizes.height
 } }
 
-// TODO array to ImageBitmap
 // (on ImageAndData<ArrayOps>)
 /** @param depth value from 0.0 to 1.0 */
 fun getComposeImage(imgAndData: ImageAndData<ArrayOps>, view: View, depth: Float): ImageBitmap? {
@@ -58,14 +64,19 @@ fun getComposeImage(imgAndData: ImageAndData<ArrayOps>, view: View, depth: Float
     val depthToIndex = { depth: Float, view: View ->
         round(depth * viewDepth(view, imgArr.whd)).toInt() //.also { println("Get image at index $it") }
     }
-    val shArrArr = when(view) {
-        View.SLICE -> imgArr.zyx[depthToIndex(depth, view)]
-        View.SIDE -> imgArr.xyz[depthToIndex(depth, view)]
-        View.TOP -> imgArr.yxz[depthToIndex(depth, view)]
+    val shArr = when(view) {
+        View.SLICE -> imgArr.getFlatYXforZ(depthToIndex(depth, view))
+        View.SIDE -> imgArr.getFlatYZforX(depthToIndex(depth, view))
+        View.TOP -> imgArr.getFlatXZforY(depthToIndex(depth, view))
+    }
+    val shArrHByW = when(view) { // first is height, second width
+        View.SLICE -> imgArr.size.height to imgArr.size.width // YX for Z
+        View.SIDE -> imgArr.size.height to imgArr.size.depth  // YZ for X
+        View.TOP -> imgArr.size.width to imgArr.size.depth    // XZ for Y
     }
 
     val imageBitmap = rawByteArrayToImageBitmap(
-        transformPixels(shArrArr.flatten().toShortArray()), shArrArr[0].size, shArrArr.size, 4
+        transformPixelsToRGBA(shArr), shArrHByW.second, shArrHByW.first, 4
     )
     return imageBitmap // non-null
 }

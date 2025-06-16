@@ -1,17 +1,16 @@
 
 import dicom.TagToDataMap
 import dicom.filestructure.DataRead
-import dicom.hexString
 import dicom.tagAsUInt
 import transform3d.ArrayOps
 import transform3d.Config
 import transform3d.ImageAndData
 import transform3d.Interpolation
+import transform3d.InterpolationSA
 import transform3d.InterpretData
 import transform3d.InterpretData.columnsTag
 import transform3d.InterpretData.rowsTag
 import transform3d.tagNotFoundErr
-import kotlin.collections.toString
 
 private fun directory() = ReadHelp.pickDirAndDicom().first
 
@@ -33,6 +32,44 @@ fun loadDicomData(): ImageAndData<ArrayOps> {
     // 1. choose directory
     val selectedTags = InterpretData.necessaryInfo
     val dirName = directory() // should contain only ONE set of images
+
+    // new way - ez to parallelize:
+    val instanceNumTag = tagAsUInt("(0020,0013)") // It is 'IS' - integer string. Copied from ImageSorter to make it faster
+
+    // Interpolation will make other image's data useless. Keep only one. The image unique data are used only for ordering of them.
+    var oneDataMap: TagToDataMap? = null
+
+
+    // Merged steps 1-5. directory -> sorted list of images (as ShortArray)
+    val imageList = ReadHelp.listFilesInDir(dirName).map { fileName ->
+
+        // 1. pick file, get cursor
+        val cursor = ReadHelp.cursorAtDataSet(dirName + fileName) // string -> cursor
+
+        // 2. get data map
+        val data = DataRead().getFullDataMap(cursor) // cursor -> TagToDataMap
+
+        // 3.(was 4) filter data here if necessary. All should have same series number
+        val filteredData = data
+
+        // 4.(was 3) order images (add key to know later how to sort)
+        val sortPair = (filteredData[instanceNumTag]!!.value as String).trim().toInt() to filteredData // [whichImg] = data
+
+        // 5. image data as short array, keep only one copy of non-image data
+        if(sortPair.first == 1) { // first image is actually 1
+            oneDataMap = sortPair.second
+        }
+        val imagePair = sortPair.first to InterpretData.dataMapToImage(sortPair.second)
+        imagePair
+    }.sortedBy { it.first }.map { it.second }
+
+
+    if(oneDataMap == null) {
+        //println("ERR: No data found. (TagToDataMap is null)")
+        throw Exception("No data found. (TagToDataMap is null)")
+    }
+
+    /* // old way:
     val cursors = ReadHelp.listFilesInDir(dirName).map { fileName -> ReadHelp.cursorAtDataSet(dirName + fileName) }
 
     // 2. get data map
@@ -47,8 +84,8 @@ fun loadDicomData(): ImageAndData<ArrayOps> {
     //val sortedImagesData = sortByImagePosition(imagesDataMap)
     if(sortedImagesData.isEmpty()) throw Exception("Error: After sorting, the array is empty!")
 
-    // 4. filter images. All should have same series number
-    // val filteredData = filter(sortedImagesData)
+    // 4. filter images.
+    ///val filteredData = filter(sortedImagesData)
     // val data = filteredData
     val data = sortedImagesData
 
@@ -56,7 +93,8 @@ fun loadDicomData(): ImageAndData<ArrayOps> {
     val imgAndDataList = data.map { dataMap -> InterpretData.dataMapToImageData(dataMap) }
 
     // Interpolation will make other image's data useless. Keep only one. The image unique data are used only for ordering of them.
-    val oneDataMap = imgAndDataList[0].dataMap
+    //val oneDataMap = imgAndDataList[0].dataMap
+    */
 
     val wthDat = oneDataMap[columnsTag]?: throw tagNotFoundErr(columnsTag)
     val hthDat = oneDataMap[rowsTag]?: throw tagNotFoundErr(rowsTag)
@@ -64,16 +102,16 @@ fun loadDicomData(): ImageAndData<ArrayOps> {
     val slThk = oneDataMap[tagAsUInt("[0018 0050]")]?: throw tagNotFoundErr("[0018 0050]")
     val scaleZ = if( Config.interpolateByDicomValue ) InterpretData.interpretZScaleFactor(slThk) else {
         println("backup scaleZ")
-        (wthDat.value as UInt).toDouble() / imgAndDataList.size
+        (wthDat.value as UInt).toDouble() / imageList.size
     }
 
     // Build 3D Array
-    val array3D = ArrayOps.Array3DBuilder().addAllIAD(imgAndDataList).create((wthDat.value as UInt).toInt())
+    val array3D = ArrayOps.Array3DBuilder().addAllSA(imageList).create((wthDat.value as UInt).toInt(), (hthDat.value as UInt).toInt())
 
     // 6. interpolate z axis
     array3D.interpolateOverZ(
         scaleZ, // computed from pixel size/spacing whatever
-        Interpolation::rescaleBL
+        InterpolationSA::rescaleBL
     )
     //println("selectedPixel is " + array3D.isSelectedPixelTheSame().toString() + " step 6")
 
@@ -86,7 +124,7 @@ fun loadDicomData(): ImageAndData<ArrayOps> {
     val gantryDat = oneDataMap[gantryTag]?: throw tagNotFoundErr(gantryTag)
     val gantryAngle = InterpretData.interpretGantryAkaDetectorTilt(gantryDat)
     array3D.shearByGantry(gantryAngle, whd.width,
-        Interpolation::moveBL, whd.height/2)
+        InterpolationSA::moveBL, whd.height/2)
     //println("selectedPixel is " + array3D.isSelectedPixelTheSame().toString() + " step 7")
 
     // 8. rescale hounsfield
