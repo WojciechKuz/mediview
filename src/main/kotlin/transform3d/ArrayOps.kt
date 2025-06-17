@@ -1,10 +1,5 @@
 package transform3d
 
-//import org.jetbrains.kotlinx.multik.api.d1array
-//import org.jetbrains.kotlinx.multik.api.d3array
-//import org.jetbrains.kotlinx.multik.api.mk
-//import org.jetbrains.kotlinx.multik.api.ndarray
-//import org.jetbrains.kotlinx.multik.ndarray.data.D3Array
 import dev.romainguy.kotlin.math.Float3
 import dev.romainguy.kotlin.math.Float4
 import dev.romainguy.kotlin.math.rotation
@@ -15,8 +10,6 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
-import kotlin.collections.flatten
-import kotlin.collections.get
 import kotlin.collections.toTypedArray
 import kotlin.math.ceil
 import kotlin.math.floor
@@ -51,20 +44,21 @@ class ArrayOps(
             }
         }*/
 
-        /** returns itself */
+        /** Data is ignored. Takes only imageArray part. returns itself */
         fun add(imageAndData: ImageAndData<ShortArray>) = addSA(imageAndData.imageArray)
         /** returns itself */
-        fun add(imageAndData: Array<Short>): Array3DBuilder {
-            list.add(imageAndData.toShortArray())
+        fun add(imageArray: Array<Short>): Array3DBuilder {
+            list.add(imageArray.toShortArray())
             return this
         }
         /** returns itself */
-        fun addSA(imageAndData: ShortArray): Array3DBuilder {
-            list.add(imageAndData)
+        fun addSA(imageArray: ShortArray): Array3DBuilder {
+            list.add(imageArray)
             return this
         }
-        /** add all image and data. returns itself */
-        fun addAllIAD(imageAndDataList: List<ImageAndData<ShortArray>>) = addAllSA(imageAndDataList.map { it.imageArray })
+        /** Add all image and data. Data is ignored. Takes only imageArray part. returns itself */
+        fun addAllIAD(imageAndDataList: List<ImageAndData<ShortArray>>) =
+            addAllSA(imageAndDataList.map { it.imageArray })
         /** returns itself */
         fun addAll(imageList: List<Array<Short>>): Array3DBuilder {
             list.addAll(imageList.map { it.toShortArray() })
@@ -79,20 +73,9 @@ class ArrayOps(
             val indi3 = Indices3(MySize3(width, height, list.size))
             val indi2 = Indices2(MySize2(width, height))
             return ArrayOps(
-                ShortArray(indi3.size.total) { zyxi ->
-                    val z = indi3.absoluteToZ(zyxi)
-                    val yx = indi2.absoluteIndexOf2(indi3.absoluteToX(zyxi), indi3.absoluteToY(zyxi))
-                    list[z][yx]
-                },
+                list.flattenListToShortArray(),
                 width, height
             )
-            /*
-            Array3D(list.size) { zi ->
-                val splitArr = list[zi].splitTo(rowWidth) // list[zi] is Array<Short> (yx)
-                //sayOnce { println("${list.size} times split array from ${list[zi].size} to ${splitArr[0].size}x${splitArr.size} using row width of $rowWidth.") }
-                splitArr
-            }
-            */
         }
     }
 
@@ -121,8 +104,6 @@ class ArrayOps(
             }
         }
 
-        //private inline fun <reified T> Array<Array<T>>.flattenToTyped(): Array<T> = this.flatten().toTypedArray()
-
         inline fun <reified T> List<Array<T>>.flattenListToArray(): Array<T> {
             val indi2 = Indices2(MySize2(this[0].size, this.size))
             return Array<T>(indi2.size.total) { lai ->
@@ -145,12 +126,6 @@ class ArrayOps(
             }
         }
 
-        /*fun Array<Short>.myToShortArray(): ShortArray {
-            return ShortArray(this.size) { lai ->
-                this[lai]
-            }
-        }*/
-
         // new doOnSecond
         inline fun <reified T, reified U> Array<T>.forSecond(alterSecond: (T) -> U): Array<U> {
             return Array<U>(this.size) { lai ->
@@ -159,12 +134,11 @@ class ArrayOps(
         }
 
         /** Same as map, but returns Array<U> instead of List<U>. Uses operations on collections */
-        private inline fun <reified T, reified U> Array<T>.doOnSecond(alterSecond: (T) -> U): Array<U>
-            = this.map(alterSecond).toTypedArray()
-
-        /** Same as map, but returns Array<U> instead of List<U>. Uses operations on collections */
-        private inline fun <reified T, reified U> Array<T>.indexedDoOnSecond(alterSecond: (Int, T) -> U): Array<U>
-                = this.mapIndexed(alterSecond).toTypedArray()
+        private inline fun <reified T, reified U> Array<T>.indexedDoOnSecond(alterSecond: (Int, T) -> U): Array<U> {
+            return Array<U>(this.size) { lai ->
+                alterSecond(lai, this[lai])
+            }
+        }
 
         /** reverse order of elements in array. Uses operations on collections */
         private inline fun <reified T> Array<T>.inverse(): Array<T>
@@ -200,11 +174,11 @@ class ArrayOps(
         val indi2 = Indices2(MySize2(size.width,size.height))
         val indi3 = Indices3(size)
 
-        var arrayOfZArrays: Array<ShortArray>
+        // Possible upgrade. If this function received new depth parameter,
+        // then this function will have 1 triple loop instead of 2.
 
-        // Not image, it's YX.Z
         val indexArray = Array(indi2.size.height) { yi -> yi }
-        arrayOfZArrays = indexArray.map { yi ->
+        val arrayOfZArrays: Array<ShortArray> = indexArray.map { yi ->
             CoroutineScope(Dispatchers.Default).async {
                 Array<ShortArray>(size.width) { xi ->
                     val zArr = ShortArray(size.depth) { z ->
@@ -212,7 +186,7 @@ class ArrayOps(
                     }
                     doOnZArr(zArr, indi2.absoluteIndexOf2(xi, yi))
                 }
-            }
+            } // results in List<Array<ShortArray>> // y.x.z
         }.awaitAll().flattenListToArray()
 
         val newSize = MySize3(indi3.size.width, indi3.size.height, arrayOfZArrays[0].size)
@@ -231,34 +205,6 @@ class ArrayOps(
         array = newShArr
         return this
     }
-
-    /*
-    /** Interpolate (rescale) pixels. Writes to internal list. Returns itself.
-     * `!!!` Interpolate changes the amount of images, so you can't match image with its data after this operation is performed! */
-    fun interpolateOverZ(scaleFactor: Double, rescale: (ShortArray, Double) -> ShortArray): ArrayOps {
-        return doSomethingOnYXArrayOfZArrays { zArr, _ -> rescale(zArr, scaleFactor) }
-    }
-
-    /** Negative rotationOrigin means use `y_size/2`, not `y_size - 1`. */
-    fun shearByGantry(gantryAngle: Double, move: (ShortArray, Double) -> ShortArray, rotationOrigin: Int = -1): ArrayOps {
-
-        val rotCt = if(rotationOrigin < 0)
-            size.height - 1 /*oldform[0].size/width - 1*/ /*whd.height/2*/
-        else
-            rotationOrigin
-
-        val radiansAngle = Math.toRadians(gantryAngle)
-        val moveRow = { yi: Int ->
-            sin(radiansAngle) * (rotCt - yi)
-        }
-
-        val indi2 = Indices2(MySize2(size.width,size.height))
-        return doSomethingOnYXArrayOfZArrays { zArr, yxi ->
-            val rowShear = moveRow(indi2.absoluteToY(yxi))
-            move(zArr, rowShear)
-        }
-    }
-    */
 
     /** Has to be executed in `doSomethingOnYXArrayOfZArrays`. pass this function to doSomethingOnYXArrayOfZArrays.
      * Interpolate (rescale) pixels. Writes to internal list. Returns itself.
@@ -285,31 +231,6 @@ class ArrayOps(
             move(zArr, rowShear)
         }
     }
-
-/* // While convenient to read, it really hurt performance:
-    // 0 step:
-//    var zyx: Array3D
-//        get() = array3d
-//        set(value) { array3d = value } // default
-    // 1 step:
-//    var yzx: Array3D
-//        get() = zyx.rotate()
-//        set(yzxVal) { zyx = yzxVal.rotate() }
-//    val zxy: Array3D
-//        get() = zyx.doOnSecond{ yxArr -> yxArr.rotate() }
-//        // set
-    // 2 step:
-//    val xzy: Array3D
-//        get() = zxy.rotate()
-//        // set
-//    var yxz: Array3D
-//        get() = yzx.doOnSecond { zxArr -> zxArr.rotate() }
-//        set(yxzVal) { yzx = yxzVal.doOnSecond { xzArr -> xzArr.rotate() } }
-    // 3 step:
-//    val xyz: Array3D
-//        get() = yxz.rotate()
-//        // set
-*/
 
     private fun absoluteIndexOf3(x: Int, y: Int, z: Int) = (z * size.height + y) * size.width + x
 

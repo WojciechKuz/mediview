@@ -1,0 +1,6 @@
+
+Ograniczenia funkcjonalności programu:
+
+- Katalog powinien zawierać tylko jeden zbiór danych. Powód: Filtrowanie wyłączone + następne ograniczenie poniżej
+- Przy wyborze pliku nazwa pliku jest ignorowana. Korzysta tylko z katalogu
+- Czy to w porządku, że zostawiam dane tagToData tylko jednego obrazka? Z wszytkich są używane jedynie do posortowania.

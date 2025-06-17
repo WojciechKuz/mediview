@@ -69,7 +69,7 @@ object InterpretData {
     }
 
     /** remove pixel data (7FE0,0010) from data map. Leave only descriptive elements. */
-    private fun removeImageData(dataMap: TagToDataMap): TagToDataMap
+    fun removeImageData(dataMap: TagToDataMap): TagToDataMap
         = dataMap.filter { (key, value) -> key != tagAsUInt("(7FE0,0010)") }
 
     /** for imageData and transfer syntax returns decoded (if needed) to ByteArray Image */

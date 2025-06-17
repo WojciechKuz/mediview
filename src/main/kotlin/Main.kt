@@ -61,12 +61,6 @@ fun App(imgsize: Int, layout3inRow: Boolean = false) {
             val imageName = "loading.jpg" //"bounce.jpg" // C:\Users\Wojtek\Documents\Programy_IntelliJ\mediview\
             var filePicked by remember { mutableStateOf(false) } // UI redraw is triggered when value changes
 
-            //val manager = UIManager(imageBitmap)
-//            var uiImageMap: MutableMap<View, ImageBitmap?> by remember { mutableStateOf( mutableMapOf<View, ImageBitmap?>(
-//                View.SLICE to null as ImageBitmap?,
-//                View.SIDE to null as ImageBitmap?,
-//                View.TOP to null as ImageBitmap?
-//            ) ) }
             val uiImageMap: MutableMap<View, ImageBitmap?> = remember { mutableStateMapOf(
                 View.SLICE to null as ImageBitmap?,
                 View.SIDE to null as ImageBitmap?,
@@ -74,12 +68,10 @@ fun App(imgsize: Int, layout3inRow: Boolean = false) {
             ) }
             var manager: UIManager by remember { mutableStateOf(UIManager(uiImageMap)) }
             if (!filePicked) {
-                //imageName = pickFile()
-                //println("\"$imageName\" chosen.")
                 manager.loadDicom()
                 filePicked = true
             } else {
-                println("LaunchedEffect() again")
+                //println("LaunchedEffect() again")
             }
 
             if (layout3inRow) { // 3+1 window
@@ -107,20 +99,20 @@ fun App(imgsize: Int, layout3inRow: Boolean = false) {
             else { // 2x2 window
                 Row(modifier = Modifier.fillMaxWidth()) {
                     Image(
-                        choosePainter(manager.getImage(View.SLICE), imageName),
+                        choosePainter(uiImageMap[View.SLICE], imageName),
                         "slice XY",
                         modifier = Modifier.width(imgsize.dp).height(imgsize.dp).border(1.dp, Color.Red)
                         //modifier = Modifier.drawBehind {}
                     )
                     Image(
-                        choosePainter(manager.getImage(View.TOP), imageName),
+                        choosePainter(uiImageMap[View.TOP], imageName),
                         "top ZX",
                         modifier = Modifier.width(imgsize.dp).height(imgsize.dp).border(1.dp, Color.Green)
                     )
                 }
                 Row(modifier = Modifier.fillMaxWidth()) {
                     Image(
-                        choosePainter(manager.getImage(View.SIDE), imageName),
+                        choosePainter(uiImageMap[View.SIDE], imageName),
                         "side ZY",
                         modifier = Modifier.width(imgsize.dp).height(imgsize.dp).border(1.dp, Color.Blue)
                     )

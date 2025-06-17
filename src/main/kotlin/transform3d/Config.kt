@@ -15,5 +15,6 @@ object Config {
 class MySliderRange(val start: Float, val end: Float) {
     val range = start..(end - 1) // do not change
     val startVal = (end - start) / 2 + start // do not change
+    /** To 0.0-1.0 range */
     fun normalizeValue(value: Float) = (value - start) / (end - start) // do not change
 }

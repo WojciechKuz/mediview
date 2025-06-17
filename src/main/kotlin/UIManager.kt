@@ -13,109 +13,115 @@ import kotlin.system.measureTimeMillis
 // val trigger: () -> Unit
 
 class UIManager(val uiImageMap: MutableMap<View, ImageBitmap?>) {
-    private var imageAndData: ImageAndData<ArrayOps>? = null
-    private var size: MySize3? = null
+    private lateinit var imageAndData: ImageAndData<ArrayOps>
+    private lateinit var size: MySize3
 
     fun loadDicom() = CoroutineScope(Dispatchers.Default).launch {
+
+        val dirName = ReadHelp.pickDirAndDicom().first
         val time = measureTimeMillis {
-            imageAndData = loadDicomData()
+            imageAndData = loadDicomData(dirName)
         }
         println("Loaded dicom data in $time ms")
-        size = imageAndData?.imageArray?.size
+        size = imageAndData.imageArray.size
         println("3D array is $size")
+        uiImageMap.forEach { (key, value) ->
+            uiImageMap[key] = getImage(key, depthValues[key]!!)
+        }
         println()
         //printInfoOnce()
         println()
-        imageAndData?.let {
-            uiImageMap.forEach { (key, value) ->
-                uiImageMap[key] = getImage(key)?: uiImageMap[key]
-            }
-            /* // DEBUG:
-            if(it.imageArray.checkIfAllTheSame())
-                println("All images are the same :(")
-            else
-                println("OK, images differ from each other")
-            if(it.imageArray.isSelectedPixelTheSame(true)) // println("selectedPixel is " + it.imageArray.isSelectedPixelTheSame(true).toString())
-                println("Selected pixel is the same on all images :(")
-            else
-                println("OK, selected pixel values differ from each other")
-            */
-        }
     } // loadDicom.launch end
 
     fun getSliceImage() {}
     fun onClick() {}
     fun onRelease() {}
-    var sliderChange = 0
+
+    /** **Only to compare** with previous values. Do not use in any computations! */
+    val sliderVals: MutableMap<View, Int> = mutableMapOf(
+        View.SLICE to 0,
+        View.SIDE to 0,
+        View.TOP to 0,
+    )
     fun viewSliderChange(depth256: Float, view: View) {
-        when(view) {
-            View.SLICE -> depthSlice = Config.sliderRange.normalizeValue(depth256)
-            View.SIDE -> depthSide = Config.sliderRange.normalizeValue(depth256)
-            View.TOP -> depthTop = Config.sliderRange.normalizeValue(depth256)
-        }
+        if(!::imageAndData.isInitialized || !::size.isInitialized) { return } // yes, slider may be moved before loadDicom()
+
+        val normDepth = Config.sliderRange.normalizeValue(depth256)
+        depthValues[view] = normDepth
         //println("$view slider change, $depth256. SliceD $depthSlice, SideD $depthSide, TopD $depthTop")
 
-        // TODO remember previous getImg args (whichSlice for each view) to not refresh too much
-        uiImageMap[view] = getImage(view)
-        /*
-        if(sliderChange%3==0) {
-            println()
-            // do stuff
+        // skip calling getImage with same value as before
+        val imgDepth = normToImageDepth(view, normDepth)
+        if (sliderVals[view] == imgDepth) {
+            //println("Same $imgDepth value as before")
+            return
         }
-        sliderChange++
-        z*/
+        sliderVals[view] = imgDepth
+        // up to this point all operations in this function are light, thus not in CoroutineScope
 
+        CoroutineScope(Dispatchers.Default).launch {
+            uiImageMap[view] = getImage(view, normDepth).also { img ->
+                // .let{} when not null and no other process writes
+                if (img == null) {
+                    println("Failed to get image for $view")
+                } else {
+                    println("Got $view image $imgDepth of size ${img.width}x${img.height}")
+                    println()
+                }
+            }
+            // assign, when getImage completes, without blocking
+        }
+
+        /*
+        val deferredImage = CoroutineScope(Dispatchers.Default).async {
+            getImage(view, normDepth).also { img ->
+                // .let{} when not null and no other process writes
+                if (img == null) {
+                    println("Failed to get image for $view")
+                } else {
+                    println("Got $view image $imgDepth of size ${img.width}x${img.height}")
+                    println()
+                }
+            }
+        }
+        CoroutineScope(Dispatchers.Default).launch {
+            uiImageMap[view] = deferredImage.await()     // assign, when getImage completes, without blocking
+        }
+         */
     }
-    val startVal = { Config.sliderRange.normalizeValue(Config.sliderRange.startVal) }
-    var depthSlice = startVal() // 0-1 range
-    var depthSide = startVal()
-    var depthTop = startVal()
+
+    // normalized depths
+    val startDepth = { Config.sliderRange.normalizeValue(Config.sliderRange.startVal) }
+    val depthValues: MutableMap<View, Float> = mutableMapOf(
+        View.SLICE to startDepth(),
+        View.SIDE to startDepth(),
+        View.TOP to startDepth(),
+    )
+    private fun maxDepth(view: View) = when(view) {
+        View.SLICE -> size.depth
+        View.SIDE -> size.width
+        View.TOP -> size.height
+    }
+
+    private fun normToImageDepth(view: View, normDepth: Float): Int = (normDepth * maxDepth(view)).toInt()
 
     /**  */
-    fun getImage(view: View): ImageBitmap? {
-        val depth = when(view) {
-            View.SLICE -> depthSlice
-            View.SIDE -> depthSide
-            View.TOP -> depthTop
+    private fun getImage(view: View, depth: Float): ImageBitmap? {
+        if(!::imageAndData.isInitialized || !::size.isInitialized) {
+            throw Exception("Don't call getImage() if imageAndData or size are not initialized!")
         }
-        val maxDepth = when(view) {
-            View.SLICE -> size?.depth
-            View.SIDE -> size?.width
-            View.TOP -> size?.height
-        }
-        //println("getImage")
-        if(imageAndData == null)
-            println("imageAndData is null")
-        val writeImgRef: ImageBitmap? = imageAndData?.let { // when not null and no other process writes
-            //println("get compose img")
-            getComposeImage(it, view, depth)
-        }
-        writeImgRef?.let {
-            println("Got $view image ${if(maxDepth != null) (depth * maxDepth).toInt() else depth} of size ${it.width}x${it.height}")
-        }
-        println()
-        //if(writeImgRef != null)
-        uiImageMap[view] = writeImgRef
-        return writeImgRef
+        return getComposeImage(imageAndData, view, depth)
     }
-    //fun writeImage(view: View) { writeImgRef = getImage(view) }
-
-    fun getImage(depth256: Float, view: View): ImageBitmap? {
-        TODO()
-    }
-    //fun writeImage(depth256: Float, view: View) { writeImgRef = getImage(depth256, view) }
 
     fun printInfoOnce() {
         if(printed) return
         printed = true
-        val info = imageAndData?.dataMap
-        if(info == null) {
-            println("info is null")
-            return
-        }
+        if(!::imageAndData.isInitialized || !::size.isInitialized) { return }
+
+        val info = imageAndData.dataMap
         for(key in InterpretData.necessaryInfo) {
             if(key == tagAsUInt("(7FE0,0010)")) {
-                if(info.containsKey(key)) println("Tag (7FE0,0010) is not supposed to be in tag to data map!")
+                //if(info.containsKey(key)) println("Tag (7FE0,0010) is not supposed to be in tag to data map!")
                 continue
             }
             val value = info[key]
@@ -124,6 +130,6 @@ class UIManager(val uiImageMap: MutableMap<View, ImageBitmap?>) {
 
     }
     companion object {
-        private var printed = false
+        private var printed = false // does not guard in concurrent situation
     }
 }

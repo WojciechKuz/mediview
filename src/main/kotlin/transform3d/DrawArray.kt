@@ -9,6 +9,52 @@ import org.jetbrains.skia.ImageInfo
 import kotlin.math.round
 
 /** Short value to RGBA value */
+fun fasterTransformPixelsToRGBA(source: ShortArray): ByteArray {
+    // 4 bytes: R, G, B, alpha
+    return ByteArray(source.size * 4) { bi ->
+        if(bi % 4 == 3) {
+            0xFF.toByte()       // alpha
+        } else {
+            (source[bi/4] / 256).toByte() // R, G, B
+        }
+    }
+}
+
+/** map value from range min..max to range 0..255 */
+fun sample(value: Short, minValue: Int, maxValue: Int): Byte = sample(value, minValue.toShort(), maxValue.toShort())
+
+/** map value from range min..max to range 0..255 */
+fun sample(value: Short, minValue: Short, maxValue: Short): Byte {
+    return when {
+        (value < minValue) -> 0
+        (value in minValue..maxValue) -> {
+            val sourceR = ReARanger(minValue, maxValue)
+            val targetR = ReARanger(0, 255)
+            sourceR.valueToRange(value, targetR)
+        }
+        (value > maxValue) -> 255
+        else -> {
+            throw Exception("This will never happen")
+        }
+    }.toByte()
+}
+
+fun fasterTransformPixelsToRGBA(source: ShortArray, fromRange: IntRange): ByteArray =
+    fasterTransformPixelsToRGBA(source, fromRange.start, fromRange.endInclusive)
+/** Short value to RGBA value */
+fun fasterTransformPixelsToRGBA(source: ShortArray, minValue: Int, maxValue: Int): ByteArray {
+    // 4 bytes: R, G, B, alpha
+    return ByteArray(source.size * 4) { bi ->
+        if(bi % 4 == 3) {
+            0xFF.toByte()       // alpha
+        } else {
+            sample(source[bi/4], minValue, maxValue) // R, G, B
+        }
+    }
+}
+
+/*
+/** Short value to RGBA value */
 fun transformPixelsToRGBA(source: ShortArray): ByteArray {
     return source.flatMap { sh ->
         val byte = (sh / 256).toByte()
@@ -21,7 +67,7 @@ fun transformPixelsToRGBA(source: List<Short>): ByteArray {
         val byte = (sh / 256).toByte()
         listOf(byte, byte, byte, 0xFF.toByte()) // R, G, B as grey before, but full alpha
     }.toByteArray()
-}
+}*/
 
 /** BYTES per pixel. 1, 2 or 4 */
 fun rawByteArrayToImageBitmap(bytes: ByteArray, width: Int, height: Int, bytesPerPx: Int): ImageBitmap {
@@ -55,7 +101,7 @@ val viewDepth = { view: View, sizes: WidthHeightDepth -> when(view) {
 
 // (on ImageAndData<ArrayOps>)
 /** @param depth value from 0.0 to 1.0 */
-fun getComposeImage(imgAndData: ImageAndData<ArrayOps>, view: View, depth: Float): ImageBitmap? {
+fun getComposeImage(imgAndData: ImageAndData<ArrayOps>, view: View, depth: Float, valRange: IntRange = Short.MIN_VALUE..Short.MAX_VALUE): ImageBitmap? {
     if(depth !in 0f..1f) {
         println("depth $depth out of range 0.0--1.0")
         return null
@@ -76,7 +122,10 @@ fun getComposeImage(imgAndData: ImageAndData<ArrayOps>, view: View, depth: Float
     }
 
     val imageBitmap = rawByteArrayToImageBitmap(
-        transformPixelsToRGBA(shArr), shArrHByW.second, shArrHByW.first, 4
+        fasterTransformPixelsToRGBA(shArr, valRange),
+        shArrHByW.second,
+        shArrHByW.first,
+        4
     )
     return imageBitmap // non-null
 }
