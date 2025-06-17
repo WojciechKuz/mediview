@@ -1,34 +1,35 @@
 import androidx.compose.ui.graphics.ImageBitmap
-import dev.romainguy.kotlin.math.max
 import dicom.tagAsUInt
 import transform3d.ArrayOps
 import transform3d.Config
 import transform3d.ImageAndData
 import transform3d.InterpretData
 import transform3d.View
-import transform3d.WidthHeightDepth
 import transform3d.getComposeImage
 import kotlinx.coroutines.*
+import transform3d.MySize3
 import kotlin.system.measureTimeMillis
 
 // val trigger: () -> Unit
 
 class UIManager(val uiImageMap: MutableMap<View, ImageBitmap?>) {
     private var imageAndData: ImageAndData<ArrayOps>? = null
-    private var whd: WidthHeightDepth? = null
+    private var size: MySize3? = null
 
     fun loadDicom() = CoroutineScope(Dispatchers.Default).launch {
         val time = measureTimeMillis {
             imageAndData = loadDicomData()
         }
         println("Loaded dicom data in $time ms")
-        whd = imageAndData?.imageArray?.whd
-        println("3D array is $whd")
+        size = imageAndData?.imageArray?.size
+        println("3D array is $size")
         println()
         //printInfoOnce()
         println()
         imageAndData?.let {
-            uiImageMap.forEach { (key, value) -> uiImageMap[key] = getImage(key)?: uiImageMap[key] }
+            uiImageMap.forEach { (key, value) ->
+                uiImageMap[key] = getImage(key)?: uiImageMap[key]
+            }
             /* // DEBUG:
             if(it.imageArray.checkIfAllTheSame())
                 println("All images are the same :(")
@@ -40,7 +41,7 @@ class UIManager(val uiImageMap: MutableMap<View, ImageBitmap?>) {
                 println("OK, selected pixel values differ from each other")
             */
         }
-    }
+    } // loadDicom.launch end
 
     fun getSliceImage() {}
     fun onClick() {}
@@ -54,6 +55,7 @@ class UIManager(val uiImageMap: MutableMap<View, ImageBitmap?>) {
         }
         //println("$view slider change, $depth256. SliceD $depthSlice, SideD $depthSide, TopD $depthTop")
 
+        // TODO remember previous getImg args (whichSlice for each view) to not refresh too much
         uiImageMap[view] = getImage(view)
         /*
         if(sliderChange%3==0) {
@@ -77,15 +79,15 @@ class UIManager(val uiImageMap: MutableMap<View, ImageBitmap?>) {
             View.TOP -> depthTop
         }
         val maxDepth = when(view) {
-            View.SLICE -> whd?.depth
-            View.SIDE -> whd?.width
-            View.TOP -> whd?.height
+            View.SLICE -> size?.depth
+            View.SIDE -> size?.width
+            View.TOP -> size?.height
         }
         //println("getImage")
         if(imageAndData == null)
             println("imageAndData is null")
         val writeImgRef: ImageBitmap? = imageAndData?.let { // when not null and no other process writes
-            println("get compose img")
+            //println("get compose img")
             getComposeImage(it, view, depth)
         }
         writeImgRef?.let {
