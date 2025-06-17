@@ -58,7 +58,7 @@ fun App(imgsize: Int, layout3inRow: Boolean = false) {
     // Actual UI:
     MaterialTheme {
         Column(modifier = modif) {
-            val imageName = "bounce.jpg" // C:\Users\Wojtek\Documents\Programy_IntelliJ\mediview\
+            val imageName = "loading.jpg" //"bounce.jpg" // C:\Users\Wojtek\Documents\Programy_IntelliJ\mediview\
             var filePicked by remember { mutableStateOf(false) } // UI redraw is triggered when value changes
 
             //val manager = UIManager(imageBitmap)

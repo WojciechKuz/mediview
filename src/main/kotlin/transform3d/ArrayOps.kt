@@ -8,6 +8,13 @@ package transform3d
 import dev.romainguy.kotlin.math.Float3
 import dev.romainguy.kotlin.math.Float4
 import dev.romainguy.kotlin.math.rotation
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.joinAll
+import kotlinx.coroutines.launch
 import kotlin.collections.flatten
 import kotlin.collections.toTypedArray
 import kotlin.math.ceil
@@ -139,6 +146,13 @@ class ArrayOps(
         // flatten already is
         private inline fun <reified T> Array<Array<T>>.flattenToTyped(): Array<T> = this.flatten().toTypedArray()
 
+        inline fun <reified T> List<Array<T>>.flattenListToArray(): Array<T> {
+            val indi2 = Indices2(MySize2(this[0].size, this.size))
+            return Array<T>(indi2.size.total) { lai ->
+                this[indi2.absoluteToY(lai)][indi2.absoluteToX(lai)]
+            }
+        }
+
         /** Same as map, but returns Array<U> instead of List<U> */
         private inline fun <reified T, reified U> Array<T>.doOnSecond(alterSecond: (T) -> U): Array<U>
             = this.map(alterSecond).toTypedArray()
@@ -152,68 +166,129 @@ class ArrayOps(
             = this.mapIndexed { index, _ -> this[this.size - index - 1] }.toTypedArray()
     }
     /** map pixels. Writes to internal list. Returns itself. */
-    fun transformEachPixel(transform: (Short) -> Short): ArrayOps {
+    suspend fun transformEachPixel(transform: (Short) -> Short): ArrayOps {
         //array.forEach { yxArr -> yxArr.forEach { xArr -> xArr.map { transform(it) }.toTypedArray() } }
-        for(yxArr in array3d) { for (xArr in yxArr) { for(xi in xArr.indices) { xArr[xi] = transform(xArr[xi]) } } }
+        //for(yxArr in array3d) { for (xArr in yxArr) { for(xi in xArr.indices) { xArr[xi] = transform(xArr[xi]) } } }
+
+        val indi3 = Indices3(size)
+        val jobList = mutableListOf<Job>()
+        for(zi in 0 until size.depth) {
+            val job = CoroutineScope(Dispatchers.Default).launch {
+                for (yi in 0 until size.height) { for(xi in 0 until size.width) {
+                    val absi = indi3.absoluteIndexOf3(xi, yi, zi)
+                    if(absi == 15367) println("Transforming ${array[absi]} to ${transform(array[absi])}")
+                    array[absi] = transform(array[absi])
+                } }
+            }
+            jobList.add(job)
+        }
+        jobList.joinAll()
+        /*
+        val jobList = mutableListOf<Job>()
+        for(yxArr in array3d) {
+            val job = CoroutineScope(Dispatchers.Default).launch {
+                for (xArr in yxArr) { for(xi in xArr.indices) { xArr[xi] = transform(xArr[xi]) } }
+            }
+            jobList.add(job)
+        }
+        jobList.joinAll()
+         */
+
         return this
     }
 
-    /** Interpolate (rescale) pixels. Writes to internal list. Returns itself.
-     * `!!!` Interpolate changes the amount of images, so you can't match image with its data after this operation is performed! */
-    fun interpolateOverZ(scaleFactor: Double, rescale: (ShortArray, Double) -> ShortArray): ArrayOps {
+    /** from flat ZYX array creates YX.Z array to perform some operation on this z-rows. Then transforms it back to ZYX and writes to array
+     * In lambda first parameter is z-ShortArray, second is yxi value (in Indices2 of width and height) */
+    /*suspend*/ fun doSomethingOnYXArrayOfZArrays(doOnZArr: (ShortArray, Int) -> ShortArray): ArrayOps {
+
+        // CoroutineScope(Dispatchers.Default). launch or async
         // Z.Y.X
         val indi2 = Indices2(MySize2(size.width,size.height))
         val indi3 = Indices3(size)
 
+        var arrayOfZArrays: Array<ShortArray>? = null
+        var oldArrayOfZArrays: Array<ShortArray>? = null
+        var newArrayOfZArrays: Array<ShortArray>? = null
+
+        val whichWay = listOf<Boolean>(false) //listOf(true, false)
+        for(which in whichWay) {
+        if(which) { // true -> old way
         // Not image, it's XY.Z
-        val arrayOfZArrays = Array<ShortArray>(indi2.size.total) { yxi ->
+        oldArrayOfZArrays = Array<ShortArray>(indi2.size.total) { yxi ->
             val zArr = ShortArray(size.depth) { z ->
                 array[ indi3.absoluteIndexOf3(indi2.absoluteToX(yxi), indi2.absoluteToY(yxi), z) ]
                 //valueAtAbsoluteIndex()
             }
-            rescale(zArr, scaleFactor)
+            doOnZArr(zArr, yxi)
         }
-        val newSize = MySize3(indi3.size.width, indi3.size.height, arrayOfZArrays[0].size)
+            arrayOfZArrays = oldArrayOfZArrays
+        } else {
+        // Not image, it's YX.Z
+        val indexArray = Array(indi2.size.height) { yi -> yi }
+        newArrayOfZArrays = indexArray.map { yi ->
+            //CoroutineScope(Dispatchers.Default).async {
+                Array<ShortArray>(size.width) { xi ->
+                    val zArr = ShortArray(size.depth) { z ->
+                        array[indi3.absoluteIndexOf3(xi, yi, z)]
+                        //valueAtAbsoluteIndex()
+                    }
+                    doOnZArr(zArr, indi2.absoluteIndexOf2(xi, yi))
+                }
+            //}
+        }. //awaitAll().
+        //flattenListToArray()
+        toTypedArray().flattenToTyped()
+            arrayOfZArrays = newArrayOfZArrays
+        }
+        }
+
+        if(whichWay.contains(false) && whichWay.contains(true)) {
+        var allTrue = true
+        var allFalse = true
+        for(shArri in oldArrayOfZArrays!!.indices) {
+            for(shi in oldArrayOfZArrays[shArri].indices) {
+                if( oldArrayOfZArrays[shArri][shi] == newArrayOfZArrays!![shArri][shi]) {
+                    //allTrue = allTrue and true
+                    allFalse = false
+                } else {
+                    //allFalse = allFalse and true
+                    allTrue = false
+                }
+            }
+        }
+        if(!allTrue) {
+            println("These 2 ways don't return same results")
+        }
+        if(!allFalse) {
+            println("Same values exist, though")
+        }
+        println("Random value in new array: " + newArrayOfZArrays!![256*215][12])
+        println("Same value in old array: " + oldArrayOfZArrays[256*215][12])
+        }
+
+        val newSize = MySize3(indi3.size.width, indi3.size.height, arrayOfZArrays!![0].size)
         val newIndi3 = Indices3(newSize)
         val newShArr = ShortArray(newSize.total) { zyxi ->
             val x = newIndi3.absoluteToX(zyxi)
             val y = newIndi3.absoluteToY(zyxi)
             val z = newIndi3.absoluteToZ(zyxi)
-            val zArr = arrayOfZArrays[indi2.absoluteIndexOf2(x, y)]
+            val zArr = arrayOfZArrays!![indi2.absoluteIndexOf2(x, y)]
             zArr[z]
         }
         size = newSize
         array = newShArr
         return this
-        /*
-        //val arraysOfZ = Indices3(whd).absoluteIndexOf3(x, y, )
+    }
 
-        // here image means flattened(x, y)
-        // Starting with listOf( image ), z.yx
-        // 1. Transform it to yx.z
-        // 2. interpolate over those z values
-        // 3. transform back to listOf( image ), but with different z size. z.yx
-        val interpolatedArray = oldform.rotate().doOnSecond { zPixels -> // same pixel on different images
-            rescale(zPixels, scaleFactor)
-        }.rotate()
-        oldform = interpolatedArray // cost on write and read is 2 (2 full 3D array transformations)
-
-        /*
-        val replArr = Array3D(whd.depth) { zi ->
-            Array2D(whd.height) {yi ->
-                Array1D(whd.depth) { xi ->
-                    //
-                    0
-                }
-            }
-        }
-        */
-
-        return this*/
+    /*
+    /** Interpolate (rescale) pixels. Writes to internal list. Returns itself.
+     * `!!!` Interpolate changes the amount of images, so you can't match image with its data after this operation is performed! */
+    fun interpolateOverZ(scaleFactor: Double, rescale: (ShortArray, Double) -> ShortArray): ArrayOps {
+        return doSomethingOnYXArrayOfZArrays { zArr, _ -> rescale(zArr, scaleFactor) }
     }
 
     /** Negative rotationOrigin means use `y_size/2`, not `y_size - 1`. */
-    fun shearByGantry(gantryAngle: Double, width: Int, move: (ShortArray, Double) -> ShortArray, rotationOrigin: Int = -1): ArrayOps {
+    fun shearByGantry(gantryAngle: Double, move: (ShortArray, Double) -> ShortArray, rotationOrigin: Int = -1): ArrayOps {
 
         val rotCt = if(rotationOrigin < 0)
             size.height - 1 /*oldform[0].size/width - 1*/ /*whd.height/2*/
@@ -225,57 +300,39 @@ class ArrayOps(
             sin(radiansAngle) * (rotCt - yi)
         }
 
-        // Z.Y.X
         val indi2 = Indices2(MySize2(size.width,size.height))
-        val indi3 = Indices3(size)
-
-        // Not image, it's XY.Z
-        val arrayOfZArrays = Array<ShortArray>(indi2.size.total) { yxi ->
-            val zArr = ShortArray(size.depth) { z ->
-                array[ indi3.absoluteIndexOf3(indi2.absoluteToX(yxi), indi2.absoluteToY(yxi), z) ]
-                //valueAtAbsoluteIndex()
-            }
+        return doSomethingOnYXArrayOfZArrays { zArr, yxi ->
             val rowShear = moveRow(indi2.absoluteToY(yxi))
             move(zArr, rowShear)
         }
-        val newSize = MySize3(indi3.size.width, indi3.size.height, arrayOfZArrays[0].size)
-        val newIndi3 = Indices3(newSize)
-        val newShArr = ShortArray(newSize.total) { zyxi ->
-            val x = newIndi3.absoluteToX(zyxi)
-            val y = newIndi3.absoluteToY(zyxi)
-            val z = newIndi3.absoluteToZ(zyxi)
-            val zArr = arrayOfZArrays[indi2.absoluteIndexOf2(x, y)]
-            zArr[z]
-        }
-        size = newSize
-        array = newShArr
-        return this
-        /*
-        /* For y.x.z array:
-         * 1. compute move value for every row
-         * 2. move row (x) in z axis
-         * Warning! cost on write and read is 2 (2 full 3D array transformations)
-         */
-        val shearedArray = yxz.indexedDoOnSecond { yi, xzArray ->
-            val rowShear = moveRow(yi)
-            xzArray.doOnSecond { zPixels ->    // same pixel on different images
-                move(zPixels, rowShear)
-            }
-        }
-        yxz = shearedArray
-        return this
-         */
     }
+    */
 
-    /*fun convertMultik(wdh: WidthHeightDepth): D3Array<Short> {
-        // flatten array for Multik to load
-        val asOneList = oldform.flatten()
+    /** Has to be executed in `doSomethingOnYXArrayOfZArrays`. pass this function to doSomethingOnYXArrayOfZArrays.
+     * Interpolate (rescale) pixels. Writes to internal list. Returns itself.
+     * `!!!` Interpolate changes the amount of images, so you can't match image with its data after this operation is performed! */
+    fun prepareLambdaForScaleZ(scaleFactor: Double, rescale: (ShortArray, Double) -> ShortArray): (ShortArray, Int) -> ShortArray {
+        return { zArr, _ -> rescale(zArr, scaleFactor) }
+    }
+    /** Has to be executed in `doSomethingOnYXArrayOfZArrays`. pass this function to doSomethingOnYXArrayOfZArrays.
+     * Negative rotationOrigin means use `y_size/2`, not `y_size - 1`. */
+    fun prepareLambdaForShearByGantry(gantryAngle: Double, move: (ShortArray, Double) -> ShortArray, rotationOrigin: Int = -1): (ShortArray, Int) -> ShortArray {
+        val rotCt = if(rotationOrigin < 0)
+            size.height - 1 /*oldform[0].size/width - 1*/ /*whd.height/2*/
+        else
+            rotationOrigin
 
-        // perform conversion
-        val array3d: D3Array<Short> = mk.d3array(wdh.width, wdh.height, wdh.depth) { i -> asOneList[i] }
-        return array3d
+        val radiansAngle = Math.toRadians(gantryAngle)
+        val moveRow = { yi: Int ->
+            sin(radiansAngle) * (rotCt - yi)
+        }
 
-    }*/
+        val indi2 = Indices2(MySize2(size.width,size.height))
+        return { zArr, yxi ->
+            val rowShear = moveRow(indi2.absoluteToY(yxi))
+            move(zArr, rowShear)
+        }
+    }
 
 /* // While convenient to read, it really hurt performance:
     // 0 step:
@@ -420,10 +477,12 @@ class ArrayOps(
         return rotatedSlice
     }
 
+    /** only for debugging */
     fun checkIfAllTheSame(): Boolean {
         val arr = array3d.rotate().doOnSecond { zxArr -> zxArr.rotate() }.flattenToTyped() // y.x.z -> yx.z
         return arr.all { zArr -> zArr.all { it == zArr[0] } }
     }
+    /** only for debugging */
     fun isSelectedPixelTheSame(doPrint: Boolean = false): Boolean {
         val arr = array3d.rotate().doOnSecond { zxArr -> zxArr.rotate() }.flattenToTyped() // y.x.z -> yx.z
         val zValsOfSelectedPx = arr[Config.selectedPixel].toList()

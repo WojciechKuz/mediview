@@ -11,6 +11,8 @@ import transform3d.InterpretData
 import transform3d.InterpretData.columnsTag
 import transform3d.InterpretData.rowsTag
 import transform3d.tagNotFoundErr
+import kotlinx.coroutines.*
+import kotlin.time.measureTimedValue
 
 private fun directory() = ReadHelp.pickDirAndDicom().first
 
@@ -27,7 +29,8 @@ private fun filter(sortedImagesData: List<TagToDataMap>): List<TagToDataMap> {
 }
 
 /** Open DICOM file (files in same directory) ---> dicomDataMap + Array3D */
-fun loadDicomData(): ImageAndData<ArrayOps> {
+@Suppress("USELESS_CAST")
+suspend fun loadDicomData(): ImageAndData<ArrayOps> = coroutineScope {
 
     // 1. choose directory
     val selectedTags = InterpretData.necessaryInfo
@@ -39,9 +42,8 @@ fun loadDicomData(): ImageAndData<ArrayOps> {
     // Interpolation will make other image's data useless. Keep only one. The image unique data are used only for ordering of them.
     var oneDataMap: TagToDataMap? = null
 
-
     // Merged steps 1-5. directory -> sorted list of images (as ShortArray)
-    val imageList = ReadHelp.listFilesInDir(dirName).map { fileName ->
+    suspend fun mergedSteps1to5(fileName: String): Pair<Int, ShortArray> = withContext(Dispatchers.Default) {
 
         // 1. pick file, get cursor
         val cursor = ReadHelp.cursorAtDataSet(dirName + fileName) // string -> cursor
@@ -60,8 +62,17 @@ fun loadDicomData(): ImageAndData<ArrayOps> {
             oneDataMap = sortPair.second
         }
         val imagePair = sortPair.first to InterpretData.dataMapToImage(sortPair.second)
+
+        // result:
         imagePair
-    }.sortedBy { it.first }.map { it.second }
+    }
+
+    // Execute steps 1-5 asynchronously
+    val imageList = ReadHelp.listFilesInDir(dirName).map { fileName ->
+        async {
+            mergedSteps1to5(fileName)
+        }
+    }.awaitAll().sortedBy { it.first }.map { it.second }
 
 
     if(oneDataMap == null) {
@@ -99,46 +110,60 @@ fun loadDicomData(): ImageAndData<ArrayOps> {
     val wthDat = oneDataMap[columnsTag]?: throw tagNotFoundErr(columnsTag)
     val hthDat = oneDataMap[rowsTag]?: throw tagNotFoundErr(rowsTag)
 
+
+    // Build 3D Array
+    val array3D = ArrayOps.Array3DBuilder().addAllSA(imageList).create((wthDat.value as UInt).toInt(), (hthDat.value as UInt).toInt())
+
+    // 6. prepare interpolate z axis
     val slThk = oneDataMap[tagAsUInt("[0018 0050]")]?: throw tagNotFoundErr("[0018 0050]")
     val scaleZ = if( Config.interpolateByDicomValue ) InterpretData.interpretZScaleFactor(slThk) else {
         println("backup scaleZ")
         (wthDat.value as UInt).toDouble() / imageList.size
     }
+    val scaleLambda = array3D.prepareLambdaForScaleZ(scaleZ, InterpolationSA::rescaleBL)
 
-    // Build 3D Array
-    val array3D = ArrayOps.Array3DBuilder().addAllSA(imageList).create((wthDat.value as UInt).toInt(), (hthDat.value as UInt).toInt())
+    // 7. prepare shear by gantry angle
+    val gantryTag = tagAsUInt("[0018 1120]")
+    val gantryDat = oneDataMap[gantryTag]?: throw tagNotFoundErr(gantryTag)
+    val gantryAngle = InterpretData.interpretGantryAkaDetectorTilt(gantryDat)
+    val gantryLambda = array3D.prepareLambdaForShearByGantry(gantryAngle,
+        InterpolationSA::moveBL, array3D.size.height/2)
 
-    // 6. interpolate z axis
-    array3D.interpolateOverZ(
-        scaleZ, // computed from pixel size/spacing whatever
-        InterpolationSA::rescaleBL
-    )
+    val absMin = array3D.array.min()
+    val absMax = array3D.array.max()
+    //println("min $absMin, max $absMax in array before value rescale")
+
+    // Execute combined 6 and 7 lambdas
+    array3D.doSomethingOnYXArrayOfZArrays { shArr, absI ->
+        gantryLambda(scaleLambda(shArr, absI), absI)
+    }
     //println("selectedPixel is " + array3D.isSelectedPixelTheSame().toString() + " step 6")
 
     val whd = array3D.whd
 
     // ❌ at this point we have 512x512x512 array ❌ Not true. rescaled with 1 / sliceThickness.
 
-    // 7. shear by gantry angle
-    val gantryTag = tagAsUInt("[0018 1120]")
-    val gantryDat = oneDataMap[gantryTag]?: throw tagNotFoundErr(gantryTag)
-    val gantryAngle = InterpretData.interpretGantryAkaDetectorTilt(gantryDat)
-    array3D.shearByGantry(gantryAngle, whd.width,
-        InterpolationSA::moveBL, whd.height/2)
-    //println("selectedPixel is " + array3D.isSelectedPixelTheSame().toString() + " step 7")
+    val minValTag = oneDataMap[tagAsUInt("[0028 0106]")]?: throw tagNotFoundErr(tagAsUInt("[0028 0106]")) // -> Smallest Image Pixel Value (MIN VAL)
+    val maxValTag = oneDataMap[tagAsUInt("[0028 0107]")]?: throw tagNotFoundErr(tagAsUInt("[0028 0107]")) // -> Largest Image Pixel Value  (MAX VAL)
+    val dcmMin = minValTag.value as UInt
+    val dcmMax = maxValTag.value as UInt
+    //println("min value $dcmMin, max value $dcmMax in dicom")
+
 
     // 8. rescale hounsfield
     // get tag rescale slope, rescale intercept
     val rescItDat = oneDataMap[tagAsUInt("[0028 1052]")]?: throw tagNotFoundErr(tagAsUInt("[0028 1052]"))
     val rescSlDat = oneDataMap[tagAsUInt("[0028 1053]")]?: throw tagNotFoundErr(tagAsUInt("[0028 1053]"))
     val rescaleFunction = InterpretData.interpretRescale(rescItDat, rescSlDat)
-    array3D.transformEachPixel(rescaleFunction)
-    //println("selectedPixel is " + array3D.isSelectedPixelTheSame().toString() + " step 8")
+    //println("values will be rescaled to min ${rescaleFunction(absMin)} max ${rescaleFunction(absMax)}")
 
-    // 9. convert to Multik's 3D array
-    //val array = array3D.convertMultik(whd) // ???
+    //array3D.transformEachPixel(rescaleFunction) // FIXME disabled rescale Hounsfield until transformPixelsToRGBA() is upgraded
+    array3D.transformEachPixel { sh -> (sh * 4).toShort() }
+
+    //println("selectedPixel is " + array3D.isSelectedPixelTheSame().toString() + " step 8")
 
     println("Processing images finished.")
 
-    return ImageAndData<ArrayOps>(oneDataMap, array3D)
+    // result:
+    ImageAndData<ArrayOps>(oneDataMap, array3D)
 }

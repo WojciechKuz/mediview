@@ -8,14 +8,20 @@ import transform3d.InterpretData
 import transform3d.View
 import transform3d.WidthHeightDepth
 import transform3d.getComposeImage
+import kotlinx.coroutines.*
+import kotlin.system.measureTimeMillis
 
 // val trigger: () -> Unit
 
 class UIManager(val uiImageMap: MutableMap<View, ImageBitmap?>) {
     private var imageAndData: ImageAndData<ArrayOps>? = null
     private var whd: WidthHeightDepth? = null
-    fun loadDicom() {
-        imageAndData = loadDicomData()
+
+    fun loadDicom() = CoroutineScope(Dispatchers.Default).launch {
+        val time = measureTimeMillis {
+            imageAndData = loadDicomData()
+        }
+        println("Loaded dicom data in $time ms")
         whd = imageAndData?.imageArray?.whd
         println("3D array is $whd")
         println()
@@ -23,6 +29,7 @@ class UIManager(val uiImageMap: MutableMap<View, ImageBitmap?>) {
         println()
         imageAndData?.let {
             uiImageMap.forEach { (key, value) -> uiImageMap[key] = getImage(key)?: uiImageMap[key] }
+            /* // DEBUG:
             if(it.imageArray.checkIfAllTheSame())
                 println("All images are the same :(")
             else
@@ -31,8 +38,10 @@ class UIManager(val uiImageMap: MutableMap<View, ImageBitmap?>) {
                 println("Selected pixel is the same on all images :(")
             else
                 println("OK, selected pixel values differ from each other")
+            */
         }
     }
+
     fun getSliceImage() {}
     fun onClick() {}
     fun onRelease() {}

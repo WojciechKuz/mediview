@@ -6,13 +6,19 @@ class MySize3(val width: Int, val height: Int, val depth: Int) {
     constructor(whd: WidthHeightDepth): this(whd.width, whd.height, whd.depth)
     val total: Int; get() = width * height * depth
     fun toWhd() = WidthHeightDepth(width, height, depth)
+    override fun toString(): String {
+        return "(w:$width, h:$height, d:$depth)"
+    }
 }
 class MySize2(val width: Int, val height: Int) {
     val total: Int; get() = width * height
+    override fun toString(): String {
+        return "(w:$width, h:$height)"
+    }
 }
 class Indices3(val size: MySize3) {
     constructor(size: WidthHeightDepth): this(MySize3(size))
-    val absoluteIndexOf3 = { x: Int, y: Int, z: Int -> (z * size.height + y) * size.width + x }
+    fun absoluteIndexOf3(x: Int, y: Int, z: Int) = (z * size.height + y) * size.width + x
     val absoluteSize = size.width * size.height * size.depth
     val absoluteToX = {absIndex: Int -> absIndex%size.width }
     val absoluteToY = {absIndex: Int -> absIndex/size.width%size.height }
@@ -27,7 +33,7 @@ class Indices2(val size: MySize2) {
     fun absoluteIndexOf2(x: Int, y: Int) = y * size.width + x
     val absoluteSize = size.width * size.height
     val absoluteToX = {absIndex: Int -> absIndex%size.width }
-    val absoluteToY = {absIndex: Int -> absIndex/size.height }
+    val absoluteToY = {absIndex: Int -> absIndex/size.width }
     fun valueAtAbsIndexInArray(array: Array<Array<Array<Short>>>, absIndex: Int) =
         array [absIndex/size.width/size.height] [absIndex/size.width%size.height] [absIndex%size.width]
     fun valueAtAbsIndexInArray(array: ShortArray, absIndex: Int) =

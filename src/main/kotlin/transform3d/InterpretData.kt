@@ -87,13 +87,11 @@ object InterpretData {
             ImageType.JPEG -> {
 
                 val jpegba = jpegByteArrayToRawByteArray(imageBytes)
-                sayOnce {
-                    println("Got ${jpegba?.size} bytes of JPEG")
-                }
+                //sayOnce { println("Got ${jpegba?.size} bytes of JPEG") } // printed multiple times due to concurrency
                 jpegba
             }
             else -> {
-                sayOnce { println("No need to decode") }
+                //sayOnce { println("No need to decode") }
                 imageBytes
             }
         }
