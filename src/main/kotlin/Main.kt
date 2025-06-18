@@ -14,8 +14,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
+import transform3d.Angle
 import transform3d.Config
 import transform3d.Displaying
+import transform3d.ExtView
 import transform3d.Mode
 import transform3d.View
 import kotlin.collections.getValue
@@ -65,10 +67,11 @@ fun App() {
         Column(modifier = modif) {
             var filePicked by remember { mutableStateOf(false) } // UI redraw is triggered when value changes
 
-            val uiImageMap: MutableMap<View, ImageBitmap?> = remember { mutableStateMapOf(
-                View.SLICE to null as ImageBitmap?,
-                View.SIDE to null as ImageBitmap?,
-                View.TOP to null as ImageBitmap?
+            val uiImageMap: MutableMap<ExtView, ImageBitmap?> = remember { mutableStateMapOf(
+                ExtView.SLICE to null as ImageBitmap?,
+                ExtView.SIDE to null as ImageBitmap?,
+                ExtView.TOP to null as ImageBitmap?,
+                ExtView.FREE to null as ImageBitmap?,
             ) }
             var manager: UIManager by remember { mutableStateOf(UIManager(uiImageMap)) }
             if (!filePicked) {
@@ -115,7 +118,7 @@ fun App() {
             when(displ) {
                 Displaying.THREE -> {
                     threeImagesBlock(imgsize, uiImageMap)
-                    threeSlidersBlock(imgsize, uiImageMap, manager)
+                    threeSlidersBlock(imgsize, manager)
                 }
                 Displaying.PROJECTION -> {
                     projectionBlock(imgsize, uiImageMap, manager)
@@ -125,17 +128,35 @@ fun App() {
                 }
             }
 
-
         } // main column end
     } // theme end
 }
 
 @Composable
 @Preview
-fun projectionBlock(imgsize: Int, uiImageMap: MutableMap<View, ImageBitmap?>, manager: UIManager) {
+fun projectionBlock(imgsize: Int, uiImageMap: MutableMap<ExtView, ImageBitmap?>, manager: UIManager) {
     Box {
         Image(
-            choosePainter(uiImageMap[View.SLICE], "loading.jpg"),
+            choosePainter(uiImageMap[ExtView.SLICE], "loading.jpg"),
+            "slice XY",
+            modifier = Modifier.width(imgsize.dp).height(imgsize.dp).border(1.dp, Color.DarkGray),
+        )
+    }
+    Box {
+        uiSliderBox(imgsize, true) {
+            singleSlider(imgsize, "kąt poziomy") { manager.angleSliderChange(it, Angle.XZAngle) }
+            singleSlider(imgsize, "kąt pionowy") { manager.angleSliderChange(it, Angle.YZAngle) }
+            singleSlider(imgsize, "głębokość") { manager.viewSliderChange(it, ExtView.FREE)}
+        }
+    }
+}
+
+@Composable
+@Preview
+fun animationBlock(imgsize: Int, uiImageMap: MutableMap<ExtView, ImageBitmap?>, manager: UIManager) {
+    Box {
+        Image(
+            choosePainter(uiImageMap[ExtView.SLICE], "loading.jpg"),
             "slice XY",
             modifier = Modifier.width(imgsize.dp).height(imgsize.dp).border(1.dp, Color.DarkGray),
         )
@@ -145,41 +166,26 @@ fun projectionBlock(imgsize: Int, uiImageMap: MutableMap<View, ImageBitmap?>, ma
     }
 }
 
-@Composable
-@Preview
-fun animationBlock(imgsize: Int, uiImageMap: MutableMap<View, ImageBitmap?>, manager: UIManager) {
-    Box {
-        Image(
-            choosePainter(uiImageMap[View.SLICE], "loading.jpg"),
-            "slice XY",
-            modifier = Modifier.width(imgsize.dp).height(imgsize.dp).border(1.dp, Color.DarkGray),
-        )
-    }
-    Box {
-        singleSlider(imgsize, "nic") {}
-    }
-}
-
 
 @Composable
 @Preview
-fun threeImagesBlock(imgsize: Int, uiImageMap: MutableMap<View, ImageBitmap?>) {
+fun threeImagesBlock(imgsize: Int, uiImageMap: MutableMap<ExtView, ImageBitmap?>) {
     val imageName = "loading.jpg" //"bounce.jpg"
     Box {
         Row(modifier = Modifier.fillMaxWidth()) {
             Image(
-                choosePainter(uiImageMap[View.SLICE], imageName),
+                choosePainter(uiImageMap[ExtView.SLICE], imageName),
                 "slice XY",
                 modifier = Modifier.width(imgsize.dp).height(imgsize.dp).border(1.dp, Color.Red),
             )
             Image(
-                choosePainter(uiImageMap[View.TOP], imageName),
+                choosePainter(uiImageMap[ExtView.TOP], imageName),
                 "top ZX",
                 modifier = Modifier.width(imgsize.dp).height(imgsize.dp).border(1.dp, Color.Green),
                 contentScale = rescaleWidth,
             )
             Image(
-                choosePainter(uiImageMap[View.SIDE], imageName),
+                choosePainter(uiImageMap[ExtView.SIDE], imageName),
                 "side ZY",
                 modifier = Modifier.width(imgsize.dp).height(imgsize.dp).border(1.dp, Color.Blue),
                 contentScale = rescaleWidth,
@@ -189,7 +195,7 @@ fun threeImagesBlock(imgsize: Int, uiImageMap: MutableMap<View, ImageBitmap?>) {
 }
 @Composable
 @Preview
-fun threeSlidersBlock(imgsize: Int, uiImageMap: MutableMap<View, ImageBitmap?>, manager: UIManager) {
+fun threeSlidersBlock(imgsize: Int, manager: UIManager) {
     Box(modifier = Modifier.fillMaxSize()) { uiSliders(imgsize, true, manager::viewSliderChange) }
 }
 

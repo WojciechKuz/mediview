@@ -100,6 +100,24 @@ val viewDepth = { view: View, sizes: WidthHeightDepth -> when(view) {
     View.TOP -> sizes.height
 } }
 
+enum class ExtView {
+    SLICE, SIDE, TOP, FREE
+    ///** poziomy kąt. Ten sam widok co [YZAngle] */ XZAngle,
+    ///** pionowy kąt. Ten sam widok co [XZAngle] */ YZAngle,
+}
+fun View.toExtView() = when(this) {
+    View.SLICE -> ExtView.SLICE
+    View.TOP -> ExtView.TOP
+    View.SIDE -> ExtView.SIDE
+}
+fun ExtView.toView() = when(this) {
+    ExtView.SLICE -> View.SLICE
+    ExtView.TOP -> View.TOP
+    ExtView.SIDE -> View.SIDE
+    ExtView.FREE -> View.SLICE
+}
+fun Angle.toExtView() = ExtView.FREE
+
 enum class Mode {
     NONE,
     MEAN,
@@ -110,6 +128,10 @@ enum class Displaying {
     THREE,
     PROJECTION,
     ANIMATION,
+}
+enum class Angle {
+    /** poziomy kąt */ XZAngle,
+    /** pionowy kąt */ YZAngle,
 }
 
 fun modeMergeStrategy(mode: Mode, minValue: Int): (ShortArray) -> Short = when(mode) {
@@ -153,7 +175,7 @@ fun getComposeImage(imgAndData: ImageAndData<ArrayOps>, view: View, depth: Float
     return imageBitmap // non-null
 }
 
-fun getComposeImageAngled(imgAndData: ImageAndData<ArrayOps>, view: View, depth: Float, valRange: IntRange,
+fun getComposeImageAngled(imgAndData: ImageAndData<ArrayOps>, view: ExtView, depth: Float, valRange: IntRange,
                           yzAngle: Double, xzAngle: Double, mode: Mode = Mode.NONE): ImageBitmap? {
     if(depth !in 0f..1f) {
         println("depth $depth out of range 0.0--1.0")
@@ -165,14 +187,16 @@ fun getComposeImageAngled(imgAndData: ImageAndData<ArrayOps>, view: View, depth:
     }
     val merge = modeMergeStrategy(mode, -16000)
     val shArr = when(view) {
-        View.SLICE -> imgArr.getMergedSlicesAtAnyOrientation(depthToIndex(depth), yzAngle, xzAngle, merge)
-        View.SIDE -> imgArr.getMergedSlicesAtAnyOrientation(depthToIndex(depth), yzAngle, xzAngle, merge)
-        View.TOP -> imgArr.getMergedSlicesAtAnyOrientation(depthToIndex(depth), yzAngle, xzAngle, merge)
+        ExtView.SLICE -> imgArr.getMergedSlicesAtAnyOrientation(depthToIndex(depth), yzAngle, xzAngle, merge)
+        ExtView.SIDE -> imgArr.getMergedSlicesAtAnyOrientation(depthToIndex(depth), yzAngle, xzAngle+90.0, merge)
+        ExtView.TOP -> imgArr.getMergedSlicesAtAnyOrientation(depthToIndex(depth), yzAngle+90.0, xzAngle+90.0, merge)
+        ExtView.FREE -> imgArr.getMergedSlicesAtAnyOrientation(depthToIndex(depth), yzAngle, xzAngle, merge)
     }
     val shArrHByW = when(view) { // first is height, second width
-        View.SLICE -> imgArr.size.height to imgArr.size.width // YX for Z
-        View.SIDE -> imgArr.size.height to imgArr.size.depth  // YZ for X
-        View.TOP -> imgArr.size.width to imgArr.size.depth    // XZ for Y
+        ExtView.SLICE -> imgArr.size.height to imgArr.size.width // YX for Z
+        ExtView.SIDE -> imgArr.size.height to imgArr.size.depth  // YZ for X
+        ExtView.TOP -> imgArr.size.width to imgArr.size.depth    // XZ for Y
+        ExtView.FREE -> imgArr.size.height to imgArr.size.width // YX for Z
     }
 
     val imageBitmap = rawByteArrayToImageBitmap(
@@ -183,6 +207,3 @@ fun getComposeImageAngled(imgAndData: ImageAndData<ArrayOps>, view: View, depth:
     )
     return imageBitmap // non-null
 }
-
-// TODO on ArrayOps:
-// combine valuesAtIndices and getAnyOrientationSlice to get slice in any orientation

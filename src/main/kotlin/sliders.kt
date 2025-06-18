@@ -10,13 +10,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import transform3d.Config
+import transform3d.ExtView
 import transform3d.View
 
 /** Okienko z suwakami.
  * @param sliderValChange float jest od 0 do 256, a View: Red-SLICE, Green-TOP, Blue-SIDE */
 @Composable
 @Preview
-fun uiSliders(imgsize: Int, horizontal: Boolean = false, sliderValChange: (Float, View) -> Unit) {
+fun uiSliders(imgsize: Int, horizontal: Boolean = false, sliderValChange: (Float, ExtView) -> Unit) {
     if (horizontal) {
         Row { slidersGroup(imgsize, sliderValChange) }
     }
@@ -56,7 +57,7 @@ private fun getSliderColors(color: Color) = SliderDefaults.colors(
 
 @Composable
 @Preview
-fun uiSliderBox(imgsize: Int, horizontal: Boolean = false, sliderDeclaration: () -> Unit) {
+fun uiSliderBox(imgsize: Int, horizontal: Boolean = false, sliderDeclaration: @Composable () -> Unit) {
     if (horizontal) {
         Row { sliderDeclaration() }
     }
@@ -92,7 +93,7 @@ fun singleSlider(imgsize: Int, description: String, sliderValChange: (Float) -> 
  * @param sliderValChange float jest od 0 do 256, a View: Red-SLICE, Green-TOP, Blue-SIDE */
 @Composable
 @Preview
-private fun slidersGroup(imgsize: Int, sliderValChange: (Float, View) -> Unit) {
+private fun slidersGroup(imgsize: Int, sliderValChange: (Float, ExtView) -> Unit) {
     var redSliderPosition by remember { mutableStateOf(Config.sliderRange.startVal) }
     var greenSliderPosition by remember { mutableStateOf(Config.sliderRange.startVal) }
     var blueSliderPosition by remember { mutableStateOf(Config.sliderRange.startVal) }
@@ -104,7 +105,7 @@ private fun slidersGroup(imgsize: Int, sliderValChange: (Float, View) -> Unit) {
             valueRange = Config.sliderRange.range,
             onValueChange = {
                 redSliderPosition = it
-                sliderValChange(it, View.SLICE)
+                sliderValChange(it, ExtView.SLICE)
                 //println("Red $redSliderPosition")
             },
             colors = getSliderColors(Color.Red),
@@ -119,7 +120,7 @@ private fun slidersGroup(imgsize: Int, sliderValChange: (Float, View) -> Unit) {
             valueRange = Config.sliderRange.range,
             onValueChange = {
                 greenSliderPosition = it
-                sliderValChange(it, View.TOP)
+                sliderValChange(it, ExtView.TOP)
                 //println("Green $greenSliderPosition")
             },
             colors = getSliderColors(Color.Green),
@@ -134,7 +135,7 @@ private fun slidersGroup(imgsize: Int, sliderValChange: (Float, View) -> Unit) {
             valueRange = Config.sliderRange.range,
             onValueChange = {
                 blueSliderPosition = it
-                sliderValChange(it, View.SIDE)
+                sliderValChange(it, ExtView.SIDE)
                 //println("Blue $blueSliderPosition")
             },
             colors = getSliderColors(Color.Blue),

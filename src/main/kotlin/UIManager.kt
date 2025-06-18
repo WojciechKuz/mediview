@@ -7,17 +7,20 @@ import transform3d.InterpretData
 import transform3d.View
 import transform3d.getComposeImage
 import kotlinx.coroutines.*
+import transform3d.Angle
 import transform3d.Displaying
-import transform3d.InterpretData.columnsTag
+import transform3d.ExtView
 import transform3d.Mode
 import transform3d.MySize3
+import transform3d.getComposeImageAngled
 import transform3d.tagNotFoundErr
-import transform3d.throwWrongTag
+import transform3d.toExtView
+import transform3d.toView
 import kotlin.system.measureTimeMillis
 
 // val trigger: () -> Unit
 
-class UIManager(val uiImageMap: MutableMap<View, ImageBitmap?>) {
+class UIManager(val uiImageMap: MutableMap<ExtView, ImageBitmap?>) {
     private lateinit var imageAndData: ImageAndData<ArrayOps>
     private lateinit var size: MySize3
 
@@ -34,7 +37,7 @@ class UIManager(val uiImageMap: MutableMap<View, ImageBitmap?>) {
         size = imageAndData.imageArray.size
         println("3D array is $size")
         uiImageMap.forEach { (key, value) ->
-            uiImageMap[key] = getImage(key, depthValues[key]!!)
+            uiImageMap[key] = getImage(key)
         }
         println()
         //printInfoOnce()
@@ -46,12 +49,14 @@ class UIManager(val uiImageMap: MutableMap<View, ImageBitmap?>) {
     fun onRelease() {}
 
     /** **Only to compare** with previous values. Do not use in any computations! */
-    val sliderVals: MutableMap<View, Int> = mutableMapOf(
-        View.SLICE to 0,
-        View.SIDE to 0,
-        View.TOP to 0,
+    val depthSliderVals = mutableMapOf(
+        ExtView.SLICE to 0,
+        ExtView.SIDE to 0,
+        ExtView.TOP to 0,
+        ExtView.FREE to 0,
     )
-    fun viewSliderChange(depth256: Float, view: View) {
+    fun viewSliderChange(depth256: Float, view: View) = viewSliderChange(depth256, view.toExtView())
+    fun viewSliderChange(depth256: Float, view: ExtView) {
         if(!::imageAndData.isInitialized || !::size.isInitialized) { return } // yes, slider may be moved before loadDicom()
 
         val normDepth = Config.sliderRange.normalizeValue(depth256)
@@ -60,15 +65,15 @@ class UIManager(val uiImageMap: MutableMap<View, ImageBitmap?>) {
 
         // skip calling getImage with same value as before
         val imgDepth = normToImageDepth(view, normDepth)
-        if (sliderVals[view] == imgDepth) {
+        if (depthSliderVals[view] == imgDepth) {
             //println("Same $imgDepth value as before")
             return
         }
-        sliderVals[view] = imgDepth
+        depthSliderVals[view] = imgDepth
         // up to this point all operations in this function are light, thus not in CoroutineScope
 
         CoroutineScope(Dispatchers.Default).launch {
-            uiImageMap[view] = getImage(view, normDepth).also { img ->
+            uiImageMap[view] = getImage(view).also { img ->
                 // .let{} when not null and no other process writes
                 if (img == null) {
                     println("Failed to get image for $view")
@@ -98,26 +103,64 @@ class UIManager(val uiImageMap: MutableMap<View, ImageBitmap?>) {
          */
     }
 
-    // normalized depths
-    val startDepth = { Config.sliderRange.normalizeValue(Config.sliderRange.startVal) }
-    val depthValues: MutableMap<View, Float> = mutableMapOf(
-        View.SLICE to startDepth(),
-        View.SIDE to startDepth(),
-        View.TOP to startDepth(),
+    val angleVals = mutableMapOf( // in range -1.0 to 1.0
+        Angle.XZAngle to 0.0f,
+        Angle.YZAngle to 0.0f,
     )
-    private fun maxDepth(view: View) = when(view) {
-        View.SLICE -> size.depth
-        View.SIDE -> size.width
-        View.TOP -> size.height
+    val angleSliderVals = mutableMapOf(
+        Angle.XZAngle to 0.0f,
+        Angle.YZAngle to 0.0f,
+    )
+
+    fun angleSliderChange(angleVal256: Float, angle: Angle) {
+        if(!::imageAndData.isInitialized || !::size.isInitialized) { return } // yes, slider may be moved before loadDicom()
+
+        val normAngle = Config.sliderRange.normalizeValue(angleVal256) * 2f - 1f // [0:1] -> [-1:1]
+        angleVals[angle] = normAngle
+
+        val imgAngle = normAngle * 180.0f; // [-180:180]
+        if(angleSliderVals[angle] == imgAngle) {
+            return
+        }
+        angleSliderVals[angle] = imgAngle
+        val view = angle.toExtView()
+
+        uiImageMap[view] = getImage(view).also { img ->
+            // .let{} when not null and no other process writes
+            if (img == null) {
+                println("Failed to get image for $view")
+            } else {
+                println("Got $view image of size ${img.width}x${img.height}")
+                println()
+            }
+        }
+        // assign, when getImage completes, without blocking
     }
 
-    private fun normToImageDepth(view: View, normDepth: Float): Int = (normDepth * maxDepth(view)).toInt()
+    // normalized depths
+    val startDepth = { Config.sliderRange.normalizeValue(Config.sliderRange.startVal) }
+    val depthValues: MutableMap<ExtView, Float> = mutableMapOf(
+        ExtView.SLICE to startDepth(),
+        ExtView.SIDE to startDepth(),
+        ExtView.TOP to startDepth(),
+        ExtView.FREE to startDepth(),
+    )
+    private fun maxDepth(view: ExtView) = when(view) {
+        ExtView.SLICE -> size.depth
+        ExtView.SIDE -> size.width
+        ExtView.TOP -> size.height
+        ExtView.FREE -> size.depth
+    }
+
+    private fun normToImageDepth(view: ExtView, normDepth: Float): Int = (normDepth * maxDepth(view)).toInt()
 
     /**  */
-    private fun getImage(view: View, depth: Float): ImageBitmap? {
+    private fun getImage(view: ExtView): ImageBitmap? {
         if(!::imageAndData.isInitialized || !::size.isInitialized) {
             throw Exception("Don't call getImage() if imageAndData or size are not initialized!")
         }
+        val depth: Float = depthValues[view]?: throw Exception("depthValues does not contain $view")
+
         val minDicomVal = ((imageAndData.dataMap[tagAsUInt("[0028 0106]")]?: throw tagNotFoundErr("[0028 0106]")).value as UInt).toInt()
         val maxDicomVal = ((imageAndData.dataMap[tagAsUInt("[0028 0107]")]?: throw tagNotFoundErr("[0028 0107]")).value as UInt).toInt()
         val rescItDat = imageAndData.dataMap[tagAsUInt("[0028 1052]")]?: throw tagNotFoundErr(tagAsUInt("[0028 1052]"))
@@ -131,7 +174,17 @@ class UIManager(val uiImageMap: MutableMap<View, ImageBitmap?>) {
         // minDicomVal..maxDicomVal // contours
         // minRescaled..maxRescaled // correct <--
 
-        return getComposeImage(imageAndData, view, depth, minRescaled..maxRescaled)
+        if(view == ExtView.FREE) {
+            val xzAngle = angleVals[Angle.XZAngle]?: throw Exception("angleVals does not contain $view")
+            val yzAngle = angleVals[Angle.YZAngle]?: throw Exception("angleVals does not contain $view")
+
+            return getComposeImageAngled(
+                imageAndData, view, depth, minRescaled..maxRescaled,
+                yzAngle.toDouble(), xzAngle.toDouble()
+            )
+        }
+
+        return getComposeImage(imageAndData, view.toView(), depth, minRescaled..maxRescaled)
     }
 
     fun printInfoOnce() {
