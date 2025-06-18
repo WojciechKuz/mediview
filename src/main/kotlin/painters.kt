@@ -37,6 +37,6 @@ fun getPainter(imgBitmap: ImageBitmap?): Painter {  // We use this one for dicom
 fun choosePainter(imageBitmap: ImageBitmap?, imgFile: String) = if (imageBitmap != null) {
     getPainter(imageBitmap)
 } else {
-    println("Displaying backup image as bitmap is null.")
+    //println("Displaying backup image as bitmap is null.")
     getPainter(imgFile)
 }

@@ -7,7 +7,10 @@ import transform3d.InterpretData
 import transform3d.View
 import transform3d.getComposeImage
 import kotlinx.coroutines.*
+import transform3d.InterpretData.columnsTag
 import transform3d.MySize3
+import transform3d.tagNotFoundErr
+import transform3d.throwWrongTag
 import kotlin.system.measureTimeMillis
 
 // val trigger: () -> Unit
@@ -110,7 +113,20 @@ class UIManager(val uiImageMap: MutableMap<View, ImageBitmap?>) {
         if(!::imageAndData.isInitialized || !::size.isInitialized) {
             throw Exception("Don't call getImage() if imageAndData or size are not initialized!")
         }
-        return getComposeImage(imageAndData, view, depth)
+        val minDicomVal = ((imageAndData.dataMap[tagAsUInt("[0028 0106]")]?: throw tagNotFoundErr("[0028 0106]")).value as UInt).toInt()
+        val maxDicomVal = ((imageAndData.dataMap[tagAsUInt("[0028 0107]")]?: throw tagNotFoundErr("[0028 0107]")).value as UInt).toInt()
+        val rescItDat = imageAndData.dataMap[tagAsUInt("[0028 1052]")]?: throw tagNotFoundErr(tagAsUInt("[0028 1052]"))
+        val rescSlDat = imageAndData.dataMap[tagAsUInt("[0028 1053]")]?: throw tagNotFoundErr(tagAsUInt("[0028 1053]"))
+        val rescaleFunction = InterpretData.interpretRescale(rescItDat, rescSlDat)
+        val minRescaled = rescaleFunction(minDicomVal.toShort())
+        val maxRescaled = rescaleFunction(maxDicomVal.toShort())
+        // Short.MIN_VALUE..Short.MAX_VALUE // snowy
+        // -1030..3700 // nice, but hardcoded
+        // 0..Short.MAX_VALUE // completely dark
+        // minDicomVal..maxDicomVal // contours
+        // minRescaled..maxRescaled // correct <--
+
+        return getComposeImage(imageAndData, view, depth, minRescaled..maxRescaled)
     }
 
     fun printInfoOnce() {

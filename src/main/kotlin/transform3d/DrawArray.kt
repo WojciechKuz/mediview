@@ -21,22 +21,23 @@ fun fasterTransformPixelsToRGBA(source: ShortArray): ByteArray {
 }
 
 /** map value from range min..max to range 0..255 */
-fun sample(value: Short, minValue: Int, maxValue: Int): Byte = sample(value, minValue.toShort(), maxValue.toShort())
+fun sample(value: Short, minValue: Int, maxValue: Int): Byte =
+    sample(value, minValue.toShort(), maxValue.toShort()).toByte()
 
 /** map value from range min..max to range 0..255 */
-fun sample(value: Short, minValue: Short, maxValue: Short): Byte {
+fun sample(value: Short, minValue: Short, maxValue: Short): Int {
     return when {
         (value < minValue) -> 0
         (value in minValue..maxValue) -> {
             val sourceR = ReARanger(minValue, maxValue)
             val targetR = ReARanger(0, 255)
-            sourceR.valueToRange(value, targetR)
+            sourceR.valueToRange(value, targetR).toInt()
         }
         (value > maxValue) -> 255
         else -> {
             throw Exception("This will never happen")
         }
-    }.toByte()
+    }//.toUShort().toUByte().toByte()
 }
 
 fun fasterTransformPixelsToRGBA(source: ShortArray, fromRange: IntRange): ByteArray =
@@ -101,7 +102,7 @@ val viewDepth = { view: View, sizes: WidthHeightDepth -> when(view) {
 
 // (on ImageAndData<ArrayOps>)
 /** @param depth value from 0.0 to 1.0 */
-fun getComposeImage(imgAndData: ImageAndData<ArrayOps>, view: View, depth: Float, valRange: IntRange = Short.MIN_VALUE..Short.MAX_VALUE): ImageBitmap? {
+fun getComposeImage(imgAndData: ImageAndData<ArrayOps>, view: View, depth: Float, valRange: IntRange = 0..Short.MAX_VALUE): ImageBitmap? {
     if(depth !in 0f..1f) {
         println("depth $depth out of range 0.0--1.0")
         return null

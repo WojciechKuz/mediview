@@ -126,8 +126,8 @@ suspend fun loadDicomData(directory: String, fileName: String = ""): ImageAndDat
     val rescaleFunction = InterpretData.interpretRescale(rescItDat, rescSlDat)
     //println("values will be rescaled to min ${rescaleFunction(absMin)} max ${rescaleFunction(absMax)}")
 
-    //array3D.transformEachPixel(rescaleFunction) // FIXME disabled rescale Hounsfield until transformPixelsToRGBA() is upgraded
-    array3D.transformEachPixel { sh -> (sh * 4).toShort() }
+    array3D.transformEachPixel(rescaleFunction)
+    //array3D.transformEachPixel { sh -> (sh * 4).toShort() }
 
     //println("selectedPixel is " + array3D.isSelectedPixelTheSame().toString() + " step 8")
 

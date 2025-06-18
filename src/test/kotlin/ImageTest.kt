@@ -85,9 +85,9 @@ class ImageTest {
         println(list.toString())
         val arr = list.toTypedArray().toShortArray()
         val arrOp = ArrayOps(arr, indi3.size.width, indi3.size.height)
-        arrOp.doSomethingOnYXArrayOfZArrays { zArr, yxi ->
+        /*arrOp.doSomethingOnYXArrayOfZArrays { zArr, yxi ->
             ShortArray(indi3.size.depth) { zi -> yxi.toShort() }
-        }
+        }*/
         println(arrOp.array.toList().toString())
     }
 
@@ -151,12 +151,12 @@ class ImageTest {
         println(arrOp.array[23])
 
         println("\nZ arrays in processing:")
-        arrOp.doSomethingOnYXArrayOfZArrays { shArr, yxi ->
+        /*arrOp.doSomethingOnYXArrayOfZArrays { shArr, yxi ->
             println(shArr.toList().toString())
             scaleLambda(shArr, yxi)
             //gantryLambda(shArr, yxi)
             //gantryLambda(scaleLambda(shArr, yxi), yxi)
-        }
+        }*/
         println("end processing.\n")
 
         println(arrOp.array.toList().toString())
