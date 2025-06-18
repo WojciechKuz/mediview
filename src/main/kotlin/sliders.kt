@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.Slider
 import androidx.compose.material.SliderDefaults
+import androidx.compose.material.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -52,6 +53,41 @@ private fun getSliderColors(color: Color) = SliderDefaults.colors(
     activeTickColor = Color.Transparent,
 )
 
+
+@Composable
+@Preview
+fun uiSliderBox(imgsize: Int, horizontal: Boolean = false, sliderDeclaration: () -> Unit) {
+    if (horizontal) {
+        Row { sliderDeclaration() }
+    }
+    else {
+        Column {
+            sliderDeclaration()
+        }
+    }
+}
+@Composable
+@Preview
+fun singleSlider(imgsize: Int, description: String, sliderValChange: (Float) -> Unit) {
+    var thisSliderPosition by remember { mutableStateOf(Config.sliderRange.startVal) }
+    val modifier = Modifier.width(imgsize.dp)
+    Column {
+        Text(description)
+        Slider(
+            value = thisSliderPosition,
+            valueRange = Config.sliderRange.range,
+            onValueChange = {
+                thisSliderPosition = it
+                sliderValChange(it)
+                //println("Red $redSliderPosition")
+            },
+            colors = getSliderColors(Color.DarkGray),
+            steps = 256,
+            modifier = modifier,
+        )
+    }
+}
+
 /** dodaje 3 suwaki, musi być umieszczone w layoucie
  * @param sliderValChange float jest od 0 do 256, a View: Red-SLICE, Green-TOP, Blue-SIDE */
 @Composable
@@ -61,40 +97,49 @@ private fun slidersGroup(imgsize: Int, sliderValChange: (Float, View) -> Unit) {
     var greenSliderPosition by remember { mutableStateOf(Config.sliderRange.startVal) }
     var blueSliderPosition by remember { mutableStateOf(Config.sliderRange.startVal) }
     val modifier = Modifier.width(imgsize.dp)
-    Slider(
-        value = redSliderPosition,
-        valueRange = Config.sliderRange.range,
-        onValueChange = {
-            redSliderPosition = it
-            sliderValChange(it, View.SLICE)
-            //println("Red $redSliderPosition")
-        },
-        colors = getSliderColors(Color.Red),
-        steps = 256,
-        modifier = modifier,
-    )
-    Slider(
-        value = greenSliderPosition,
-        valueRange = Config.sliderRange.range,
-        onValueChange = {
-            greenSliderPosition = it
-            sliderValChange(it, View.TOP)
-            //println("Green $greenSliderPosition")
-        },
-        colors = getSliderColors(Color.Green),
-        steps = 256,
-        modifier = modifier
-    )
-    Slider(
-        value = blueSliderPosition,
-        valueRange = Config.sliderRange.range,
-        onValueChange = {
-            blueSliderPosition = it
-            sliderValChange(it, View.SIDE)
-            //println("Blue $blueSliderPosition")
-        },
-        colors = getSliderColors(Color.Blue),
-        steps = 256,
-        modifier = modifier
-    )
+    Column {
+        Text("slice:")
+        Slider(
+            value = redSliderPosition,
+            valueRange = Config.sliderRange.range,
+            onValueChange = {
+                redSliderPosition = it
+                sliderValChange(it, View.SLICE)
+                //println("Red $redSliderPosition")
+            },
+            colors = getSliderColors(Color.Red),
+            steps = 256,
+            modifier = modifier,
+        )
+    }
+    Column {
+        Text("top:")
+        Slider(
+            value = greenSliderPosition,
+            valueRange = Config.sliderRange.range,
+            onValueChange = {
+                greenSliderPosition = it
+                sliderValChange(it, View.TOP)
+                //println("Green $greenSliderPosition")
+            },
+            colors = getSliderColors(Color.Green),
+            steps = 256,
+            modifier = modifier
+        )
+    }
+    Column {
+        Text("side:")
+        Slider(
+            value = blueSliderPosition,
+            valueRange = Config.sliderRange.range,
+            onValueChange = {
+                blueSliderPosition = it
+                sliderValChange(it, View.SIDE)
+                //println("Blue $blueSliderPosition")
+            },
+            colors = getSliderColors(Color.Blue),
+            steps = 256,
+            modifier = modifier
+        )
+    }
 }

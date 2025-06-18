@@ -9,8 +9,10 @@ object Config {
     val rotateDirection = Float3(1f, 1f, 1f)
     val windowName = "feetpic 📷🦶" //"MediView by wojkuzb"
     val sliderRange = MySliderRange(0f, 256f)
-    val displayImageSize = 512
     val selectedPixel = (512 * 3 / 4) * 512 + (512 * 1 / 2)
+    // UI:
+    val displayImageSize = 256 //512
+    val uiRescaleWidth = false
 }
 class MySliderRange(val start: Float, val end: Float) {
     val range = start..(end - 1) // do not change

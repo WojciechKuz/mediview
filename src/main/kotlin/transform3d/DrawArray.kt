@@ -100,9 +100,31 @@ val viewDepth = { view: View, sizes: WidthHeightDepth -> when(view) {
     View.TOP -> sizes.height
 } }
 
+enum class Mode {
+    NONE,
+    MEAN,
+    MAX,
+    FIRST_HIT
+}
+enum class Displaying {
+    THREE,
+    PROJECTION,
+    ANIMATION,
+}
+
+fun modeMergeStrategy(mode: Mode, minValue: Int): (ShortArray) -> Short = when(mode) {
+    Mode.NONE -> { shArr: ShortArray -> shArr[0] }
+    Mode.MEAN -> { shArr: ShortArray ->
+        val sum = shArr.reduce { acc, sh -> (acc + sh).toShort() }
+        round((sum / shArr.size).toDouble()).toInt().toShort()
+    }
+    Mode.MAX -> { shArr: ShortArray -> shArr.max() }
+    Mode.FIRST_HIT -> { shArr: ShortArray -> shArr.first { it >= minValue } }
+}
+
 // (on ImageAndData<ArrayOps>)
 /** @param depth value from 0.0 to 1.0 */
-fun getComposeImage(imgAndData: ImageAndData<ArrayOps>, view: View, depth: Float, valRange: IntRange = 0..Short.MAX_VALUE): ImageBitmap? {
+fun getComposeImage(imgAndData: ImageAndData<ArrayOps>, view: View, depth: Float, valRange: IntRange): ImageBitmap? {
     if(depth !in 0f..1f) {
         println("depth $depth out of range 0.0--1.0")
         return null
@@ -130,9 +152,36 @@ fun getComposeImage(imgAndData: ImageAndData<ArrayOps>, view: View, depth: Float
     )
     return imageBitmap // non-null
 }
-fun getComposeImage(imgAndData: ImageAndData<ArrayOps>): ImageBitmap {
-    //
-    TODO()
+
+fun getComposeImageAngled(imgAndData: ImageAndData<ArrayOps>, view: View, depth: Float, valRange: IntRange,
+                          yzAngle: Double, xzAngle: Double, mode: Mode = Mode.NONE): ImageBitmap? {
+    if(depth !in 0f..1f) {
+        println("depth $depth out of range 0.0--1.0")
+        return null
+    }
+    val imgArr = imgAndData.imageArray
+    val depthToIndex = { depth: Float ->
+        round(depth * imgArr.size.depth).toInt() //.also { println("Get image at index $it") }
+    }
+    val merge = modeMergeStrategy(mode, -16000)
+    val shArr = when(view) {
+        View.SLICE -> imgArr.getMergedSlicesAtAnyOrientation(depthToIndex(depth), yzAngle, xzAngle, merge)
+        View.SIDE -> imgArr.getMergedSlicesAtAnyOrientation(depthToIndex(depth), yzAngle, xzAngle, merge)
+        View.TOP -> imgArr.getMergedSlicesAtAnyOrientation(depthToIndex(depth), yzAngle, xzAngle, merge)
+    }
+    val shArrHByW = when(view) { // first is height, second width
+        View.SLICE -> imgArr.size.height to imgArr.size.width // YX for Z
+        View.SIDE -> imgArr.size.height to imgArr.size.depth  // YZ for X
+        View.TOP -> imgArr.size.width to imgArr.size.depth    // XZ for Y
+    }
+
+    val imageBitmap = rawByteArrayToImageBitmap(
+        fasterTransformPixelsToRGBA(shArr, valRange),
+        shArrHByW.second,
+        shArrHByW.first,
+        4
+    )
+    return imageBitmap // non-null
 }
 
 // TODO on ArrayOps:

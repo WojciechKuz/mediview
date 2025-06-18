@@ -7,7 +7,9 @@ import transform3d.InterpretData
 import transform3d.View
 import transform3d.getComposeImage
 import kotlinx.coroutines.*
+import transform3d.Displaying
 import transform3d.InterpretData.columnsTag
+import transform3d.Mode
 import transform3d.MySize3
 import transform3d.tagNotFoundErr
 import transform3d.throwWrongTag
@@ -18,6 +20,9 @@ import kotlin.system.measureTimeMillis
 class UIManager(val uiImageMap: MutableMap<View, ImageBitmap?>) {
     private lateinit var imageAndData: ImageAndData<ArrayOps>
     private lateinit var size: MySize3
+
+    var mode = Mode.NONE
+    var displaying = Displaying.THREE
 
     fun loadDicom() = CoroutineScope(Dispatchers.Default).launch {
 
