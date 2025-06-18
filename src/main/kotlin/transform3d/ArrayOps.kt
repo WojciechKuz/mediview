@@ -2,6 +2,7 @@ package transform3d
 
 import dev.romainguy.kotlin.math.Float3
 import dev.romainguy.kotlin.math.Float4
+import dev.romainguy.kotlin.math.Mat4
 import dev.romainguy.kotlin.math.rotation
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -70,8 +71,6 @@ class ArrayOps(
             return this
         }
         fun create(width: Int, height: Int): ArrayOps {
-            val indi3 = Indices3(MySize3(width, height, list.size))
-            val indi2 = Indices2(MySize2(width, height))
             return ArrayOps(
                 list.flattenListToShortArray(),
                 width, height
@@ -265,7 +264,7 @@ class ArrayOps(
         return ShortArray(sizeOf2) { xzi -> array[absoluteIndexOf1(xzi)]}
     }
 
-    private fun ensureInBounds3D(vec: Float3): Float3 {
+    private fun ensureInBounds3D(vec: Float4): Float3 {
         fun ensure(index: Float, upperBound: Int): Float {
             return when {
                 index < 0f -> 0f
@@ -279,8 +278,9 @@ class ArrayOps(
             ensure(vec.z, size.depth)
         )
     }
+
     /** Performs Trilinear interpolation */
-    private fun valueAtIndex3D(vec: Float3): Short {
+    private fun valueAtIndex3D(vec: Float4): Short {
         val ensVec = ensureInBounds3D(vec)
         val xIndices = arrayOf( floor(ensVec.x).toInt(), ceil(ensVec.x).toInt() )
         val yIndices = arrayOf( floor(ensVec.y).toInt(), ceil(ensVec.y).toInt() )
@@ -309,10 +309,7 @@ class ArrayOps(
 
     /** For 2D index array (Float4) get 2D array of values. */
     fun valuesAtIndices(indiciesArr: Array<Array<Float4>>): Array<Array<Short>> {
-        return indiciesArr.onIndices { vec4 ->
-            val vec3 = vec4[1, 2, 3]
-            valueAtIndex3D(vec3)
-        }
+        return indiciesArr.onIndices(::valueAtIndex3D)
     }
 
     private fun indicesAtZSlice(zi: Float) = Array(size.height) { yi ->
@@ -327,11 +324,22 @@ class ArrayOps(
      * For each index (Float4) in 2D array of indices, perform operation */
     private inline fun <reified T> Array<Array<Float4>>.onIndices(operation: (Float4) -> T) =
         this.forSecond { it.forSecond { fl4 -> operation(fl4) } }
+    /** Does not overwrite anything, just returns
+     * For each index (Float4) in 1D array of indices, perform operation */
+    private inline fun <reified T> Array<Float4>.onIndices(operation: (Float4) -> T) =
+        this.forSecond { fl4 -> operation(fl4) }
+    /** Does not overwrite anything, just returns
+     * For each index (Float4) in 1D array of indices, perform operation */
+    private inline fun Array<Float4>.onIndicesToShort(operation: (Float4) -> Short) =
+        ShortArray(this.size) { i ->
+            operation(this[i])
+        }
 
     /** @param depth floating pixels
      * @param yzAngle
      * @param xzAngle both are angle in degrees
      * @return 2D array of indices (Float4) */
+    @Deprecated("", ReplaceWith("getMergedSlicesAtAnyOrientation"))
     fun getAnyOrientationSlice(depth: Float, yzAngle: Double, xzAngle: Double): Array<Array<Float4>> {
         val center = Float4(
             size.width / 2f,
@@ -352,6 +360,68 @@ class ArrayOps(
             step4
         }
         return rotatedSlice
+    }
+
+    private fun indicesAtZAxis(startZ: Int, x: Int, y: Int, rotMX: Mat4, rotMY: Mat4): Array<Float4> {
+        val center = Float4(
+            size.width / 2f,
+            size.height / 2f,
+            size.depth / 2f,
+            1f
+        )
+        val rotateVertex = { fl4: Float4 ->
+            val step1 = fl4 - center    // translate, center -> 0,0,0
+            val step2 = rotMX * step1   // rotate around X
+            val step3 = rotMY * step2   // rotate around Y
+            val step4 = step3 + center  // translate, 0,0,0 -> center
+            step4
+        }
+        return Array<Float4>(size.depth - startZ) { i ->
+            val zi = startZ + i
+            val fl4 = Float4(x.toFloat(), y.toFloat(), zi.toFloat(), 1f)
+            rotateVertex(fl4)
+        }
+    }
+    /** For 1D index array (Float4) get 2D array of values. */
+    private fun valuesAtIndicesAxis(indicesArr: Array<Float4>): ShortArray {
+        return indicesArr.onIndicesToShort(::valueAtIndex3D)
+    }
+
+    /** indicesAtZAxis -> valuesAtIndicesAxis */
+    fun valueOnAxis(startZ: Int, x: Int, y: Int, rotMX: Mat4, rotMY: Mat4, operation: (ShortArray) -> Short): Short {
+        val indices = indicesAtZAxis(startZ, x, y, rotMX, rotMY)
+        val values = valuesAtIndicesAxis(indices)
+        return operation(values)
+    }
+
+    /** Od zadanego z do końca, łącząc piksele zadaną funkcją, zwróć dowolnie zorientowaną klatkę obrazu
+     * @param depth
+     * @param yzAngle
+     * @param xzAngle both are angle in degrees
+     */
+    fun getMergedSlicesAtAnyOrientation(depth: Int, yzAngle: Double, xzAngle: Double, merge: (ShortArray) -> Short = { it[0] }): ShortArray {
+
+        //val xAxisAngle = Math.toRadians(yzAngle).toFloat()
+        //val yAxisAngle = Math.toRadians(xzAngle).toFloat()
+        val rotMX = rotation(axis = Float3(x = Config.rotateDirection.x), angle = yzAngle.toFloat()) // takes degrees
+        val rotMY = rotation(axis = Float3(y = Config.rotateDirection.y), angle = xzAngle.toFloat())
+
+        /*for(y in 0 until size.height) {
+            CoroutineScope(Dispatchers.Default).async {
+                for (x in 0 until size.width) {
+                    val valueForZ = valueOnAxis(depth, x, y, rotMX, rotMY, merge)
+                }
+            }
+        }*/
+
+        val indi2 = Indices2(MySize2(size.width,size.height))
+        val orientedSlice = ShortArray(indi2.size.total) { i ->
+            val x = indi2.absoluteToX(i)
+            val y = indi2.absoluteToY(i)
+            valueOnAxis(depth, x, y, rotMX, rotMY, merge)
+        }
+
+        return orientedSlice
     }
 
 
