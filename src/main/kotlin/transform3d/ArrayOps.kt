@@ -118,8 +118,9 @@ class ArrayOps(
             }
         }
 
-        fun List<ShortArray>.flattenListToShortArray(): ShortArray {
+        fun List<ShortArray>.flattenListToShortArray(): ShortArray { // Number of coroutines can be minimized with use of coroutineForLoop()
             val indi2 = Indices2(MySize2(this[0].size, this.size))
+            // indi2.size.height as depth, indi2.size.width as combined height and width
             return ShortArray(indi2.size.total) { lai ->
                 this[indi2.absoluteToY(lai)][indi2.absoluteToX(lai)]
             }
@@ -145,7 +146,7 @@ class ArrayOps(
     }
 
     /** map pixels. Writes to internal list. Returns itself. */
-    suspend fun transformEachPixel(transform: (Short) -> Short): ArrayOps {
+    suspend fun transformEachPixel(transform: (Short) -> Short): ArrayOps { // Number of coroutines can be minimized with use of coroutineForLoop()
         val indi3 = Indices3(size)
         val jobList = mutableListOf<Job>()
         for(zi in 0 until size.depth) {
@@ -153,7 +154,7 @@ class ArrayOps(
                 for (yi in 0 until size.height) {
                     for(xi in 0 until size.width) {
                         val absi = indi3.absoluteIndexOf3(xi, yi, zi)
-                        if(absi == 15367) println("Transforming ${array[absi]} to ${transform(array[absi])}")
+                        //if(absi == 15367) println("Transforming ${array[absi]} to ${transform(array[absi])}")
                         array[absi] = transform(array[absi])
                     }
                 }
@@ -167,7 +168,6 @@ class ArrayOps(
     /** from flat ZYX array creates YX.Z array to perform some operation on this z-rows. Then transforms it back to ZYX and writes to array
      * In lambda first parameter is z-ShortArray, second is yxi value (in Indices2 of width and height) */
     suspend fun doSomethingOnYXArrayOfZArrays(doOnZArr: (ShortArray, Int) -> ShortArray): ArrayOps {
-        // CoroutineScope(Dispatchers.Default). launch or async
 
         // Z.Y.X
         val indi2 = Indices2(MySize2(size.width,size.height))
@@ -223,31 +223,10 @@ class ArrayOps(
                 }
                 val newZArr = doOnZArr(zArr, indi2.absoluteIndexOf2(xi, yi))
                 for(zi in newZArr.indices) {
-                    //if(newIndi3.absoluteIndexOf3(xi, yi, zi) >= newArray.size)
-                    //    print(" |is${newZArr.size},id${newIndi3.size.depth},st${newIndi3.size.total},ai${newIndi3.absoluteIndexOf3(xi, yi, zi)}| ")
                     newArray[newIndi3.absoluteIndexOf3(xi, yi, zi)] = newZArr[zi]
                 }
             }
         }
-        /*
-        val jobList = mutableListOf<Job>()
-
-        for(yi in 0 until indi2.size.height) {
-            val job = CoroutineScope(Dispatchers.Default).launch {
-                for(xi in 0 until size.width) {
-                    val zArr = ShortArray(size.depth) { z ->
-                        array[indi3.absoluteIndexOf3(xi, yi, z)]
-                    }
-                    val newZArr = doOnZArr(zArr, indi2.absoluteIndexOf2(xi, yi))
-                    for(zi in newZArr.indices) {
-                        newArray[newIndi3.absoluteIndexOf3(xi, yi, zi)] = newZArr[zi]
-                    }
-                }
-            }
-            jobList.add(job)
-        }
-        jobList.joinAll()
-        */
         size = newSize
         array = newArray
         return this
@@ -401,83 +380,6 @@ class ArrayOps(
         )
     } // manualValueAtIndex3D end
 
-    // Delete this:
-    // for each row: in row: map values fl4 -> fl4
-    /** Does not overwrite anything, just returns
-     * For each index (Float4) in 2D array of indices, perform operation */
-    private inline fun <reified T> Array<Array<Float4>>.onIndices(operation: (Float4) -> T) =
-        this.forSecond { it.forSecond { fl4 -> operation(fl4) } }
-    /** Does not overwrite anything, just returns
-     * For each index (Float4) in 1D array of indices, perform operation */
-    private inline fun <reified T> Array<Float4>.onIndices(operation: (Float4) -> T) =
-        this.forSecond { fl4 -> operation(fl4) }
-    /** Does not overwrite anything, just returns
-     * For each index (Float4) in 1D array of indices, perform operation */
-    private inline fun Array<Float4>.onIndicesToShort(operation: (Float4) -> Short) =
-        ShortArray(this.size) { i ->
-            operation(this[i])
-        }
-    /** For 2D index array (Float4) get 2D array of values. */
-    fun valuesAtIndices(indiciesArr: Array<Array<Float4>>): Array<Array<Short>> {
-        return indiciesArr.onIndices(::valueAtIndex3D)
-    }
-    private fun indicesAtZSlice(zi: Float) = Array(size.height) { yi ->
-        Array(size.width) { xi ->
-            Float4(zi, yi.toFloat(), xi.toFloat(), 1f)
-        }
-    }
-    /** @param depth floating pixels
-     * @param yzAngle
-     * @param xzAngle both are angle in degrees
-     * @return 2D array of indices (Float4) */
-    @Deprecated("", ReplaceWith("getMergedSlicesAtAnyOrientation"))
-    fun getAnyOrientationSlice(depth: Float, yzAngle: Double, xzAngle: Double): Array<Array<Float4>> {
-        val center = Float4(
-            size.width / 2f,
-            size.height / 2f,
-            size.depth / 2f,
-            1f
-        )
-        //val xAxisAngle = Math.toRadians(yzAngle).toFloat()
-        //val yAxisAngle = Math.toRadians(xzAngle).toFloat()
-        val slice = indicesAtZSlice(depth)
-        val rotMX = rotation(axis = Float3(x = Config.rotateDirection.x), angle = yzAngle.toFloat()) // takes degrees
-        val rotMY = rotation(axis = Float3(y = Config.rotateDirection.y), angle = xzAngle.toFloat())
-        val rotatedSlice = slice.onIndices { fl4 ->
-            val step1 = fl4 - center    // translate, center -> 0,0,0
-            val step2 = rotMX * step1   // rotate around X
-            val step3 = rotMY * step2   // rotate around Y
-            val step4 = step3 + center  // translate, 0,0,0 -> center
-            step4
-        }
-        return rotatedSlice
-    }
-    @Deprecated("", ReplaceWith("valueAtTransformedPosition"))
-    private fun indicesAtZAxis(startZ: Int, x: Int, y: Int, rotMX: Mat4, rotMY: Mat4): Array<Float4> {
-        return Array<Float4>(size.depth - startZ) { i ->
-            val fl4 = Float4(
-                x.toFloat() - (size.width / 2f), // incorporated translation to the center
-                y.toFloat() - (size.height / 2f),
-                (startZ + i).toFloat() - (size.depth / 2f),
-                1f
-            )                           // translate, center -> 0,0,0
-            val step1 = rotMX * fl4     // rotate around X
-            val step2 = rotMY * step1   // rotate around Y
-            Float4(
-                step2.x + (size.width / 2f), // incorporated translation from the center
-                step2.y + (size.height / 2f),
-                step2.z + (size.depth / 2f),
-                1f
-            )                           // translate, 0,0,0 -> center. And return
-        }
-    }
-    @Deprecated("", ReplaceWith("valueAtTransformedPosition"))
-    /** For 1D index array (Float4) get 2D array of values. */
-    private fun valuesAtIndicesAxis(indicesArr: Array<Float4>): ShortArray {
-        return indicesArr.onIndicesToShort(::valueAtIndex3D)
-    }
-    // Delete end
-
     /** Combined previously 2 steps - creating indices array, getting value */
     private fun valueAtTransformedPosition(startZ: Int, x: Int, y: Int, rotMX: Mat4, rotMY: Mat4): ShortArray {
         val fl4 = Float4(       // translate, center -> 0,0,0
@@ -487,7 +389,7 @@ class ArrayOps(
             1f
         )
         return ShortArray(size.depth - startZ) { i ->
-            fl4.z = (startZ + i).toFloat() - (size.depth / 2f) // update z (and transform to center)
+            fl4.z = (startZ + i).toFloat() - (size.depth / 2f) // update z (and translate to center)
             val step1 = rotMX * fl4     // rotate around X
             val step2 = rotMY * step1   // rotate around Y
             val index = Float4(
@@ -506,18 +408,10 @@ class ArrayOps(
      * @param xzAngle both are angle in degrees
      */
     suspend fun getMergedSlicesAtAnyOrientation(depth: Int, yzAngle: Double, xzAngle: Double, merge: (ShortArray) -> Short = { it[0] }): ShortArray {
-        println("Plum! depth: $depth, yzAngle: $yzAngle, xzAngle: $xzAngle")
+        //println("AngledImg. depth: $depth, yzAngle: $yzAngle, xzAngle: $xzAngle")
 
         val rotMX = rotation(axis = Float3(x = Config.rotateDirection.x), angle = yzAngle.toFloat()) // takes degrees
         val rotMY = rotation(axis = Float3(y = Config.rotateDirection.y), angle = xzAngle.toFloat())
-
-        /*for(y in 0 until size.height) {
-            CoroutineScope(Dispatchers.Default).async {
-                for (x in 0 until size.width) {
-                    val valueForZ = valueOnAxis(depth, x, y, rotMX, rotMY, merge)
-                }
-            }
-        }*/
 
         val indi2 = Indices2(MySize2(size.width,size.height))
 
@@ -528,35 +422,4 @@ class ArrayOps(
 
         return orientedSlice
     }
-
-    // Delete this:
-    /** default is Z.Y.X Use only for prototyping and debugging. Expensive to compute! */
-    var array3d: Array<Array<Array<Short>>>
-        get() = array.toTypedArray().splitTo(size.width).splitTo(size.height)
-        set(value) {
-            size = MySize3(
-                value[0][0].size,
-                value[0].size,
-                value.size
-            )
-            array = value.flattenArray().flattenArray().toShortArray()
-        }
-
-    /** only for debugging */
-    fun checkIfAllTheSame(): Boolean {
-        val arr = array3d.rotate().forSecond { zxArr -> zxArr.rotate() }.flattenArray() // y.x.z -> yx.z
-        return arr.all { zArr -> zArr.all { it == zArr[0] } }
-    }
-    /** only for debugging */
-    fun isSelectedPixelTheSame(doPrint: Boolean = false): Boolean {
-        val arr = array3d.rotate().forSecond { zxArr -> zxArr.rotate() }.flattenArray() // y.x.z -> yx.z
-        val zValsOfSelectedPx = arr[Config.selectedPixel].toList()
-        if(doPrint)
-            println("zValsOfSelectedPx: $zValsOfSelectedPx")
-        return zValsOfSelectedPx.all { it == zValsOfSelectedPx[0] }
-    }
-    // Delete end
 }
-typealias Array1D = Array<Short>
-typealias Array2D = Array<Array<Short>>
-typealias Array3D = Array<Array<Array<Short>>>
