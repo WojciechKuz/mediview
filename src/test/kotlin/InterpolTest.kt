@@ -1,17 +1,17 @@
-import transform3d.Interpolation
+import transform3d.InterpolationSA
 import transform3d.sample
 import kotlin.test.Test
 
 class InterpolTest {
-    val startArray = listOf(1536, 1040, 1040, 1072, 976, 1040, 432, 16).map {it.toShort()}.toTypedArray()
+    val startArray = listOf(1536, 1040, 1040, 1072, 976, 1040, 432, 16).map {it.toShort()}.toShortArray()
     @Test
     fun testRescaleBL() {
-        val result = Interpolation.rescaleBL(startArray, 1.25).toList()
+        val result = InterpolationSA.rescaleBL(startArray, 1.25).toList()
         println(result)
     }
     @Test
     fun testMoveBL() {
-        val result = Interpolation.moveBL(startArray, 0.5).toList()
+        val result = InterpolationSA.moveBL(startArray, 0.5).toList()
         println(result)
     }
 

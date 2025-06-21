@@ -24,15 +24,13 @@ dependencies {
     // With compose.desktop.common you will also lose @Preview functionality
     implementation(compose.desktop.currentOs)
     testImplementation("org.jetbrains.kotlin:kotlin-test")
-    //api("org.jetbrains.skija:${"skija-windows"}:${"0.93.6"}")
-    //implementation("io.coil-kt.coil3:coil-compose:3.2.0")
     implementation("com.twelvemonkeys.imageio:imageio-jpeg:3.12.0") // Yay! twelveMonkeys works 😄
+    implementation("dev.romainguy:kotlin-math:1.6.0")
 
     //implementation("org.jetbrains.kotlinx:multik-core:0.2.3")
     //implementation("org.jetbrains.kotlinx:multik-default:0.2.3")
     //api("space.kscience:kmath-core:0.3.1")
     //implementation("space.kscience:kmath-geometry:0.3.1")
-    implementation("dev.romainguy:kotlin-math:1.6.0")
 }
 
 compose.desktop {

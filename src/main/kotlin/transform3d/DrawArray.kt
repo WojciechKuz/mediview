@@ -54,22 +54,6 @@ fun fasterTransformPixelsToRGBA(source: ShortArray, minValue: Int, maxValue: Int
     }
 }
 
-/*
-/** Short value to RGBA value */
-fun transformPixelsToRGBA(source: ShortArray): ByteArray {
-    return source.flatMap { sh ->
-        val byte = (sh / 256).toByte()
-        listOf(byte, byte, byte, 0xFF.toByte()) // R, G, B as grey before, but full alpha
-    }.toByteArray()
-}
-/** Short value to RGBA value */
-fun transformPixelsToRGBA(source: List<Short>): ByteArray {
-    return source.flatMap { sh ->
-        val byte = (sh / 256).toByte()
-        listOf(byte, byte, byte, 0xFF.toByte()) // R, G, B as grey before, but full alpha
-    }.toByteArray()
-}*/
-
 /** BYTES per pixel. 1, 2 or 4 */
 fun rawByteArrayToImageBitmap(bytes: ByteArray, width: Int, height: Int, bytesPerPx: Int): ImageBitmap {
     val sourceInfo = ImageInfo(
@@ -102,8 +86,8 @@ val viewDepth = { view: View, sizes: WidthHeightDepth -> when(view) {
 
 enum class ExtView {
     SLICE, SIDE, TOP, FREE
-    ///** poziomy kąt. Ten sam widok co [YZAngle] */ XZAngle,
-    ///** pionowy kąt. Ten sam widok co [XZAngle] */ YZAngle,
+    // /** poziomy kąt. Ten sam widok co [YZAngle] */ XZAngle,
+    // /** pionowy kąt. Ten sam widok co [XZAngle] */ YZAngle,
 }
 fun View.toExtView() = when(this) {
     View.SLICE -> ExtView.SLICE
@@ -137,11 +121,15 @@ enum class Angle {
 fun modeMergeStrategy(mode: Mode, minValue: Int): (ShortArray) -> Short = when(mode) {
     Mode.NONE -> { shArr: ShortArray -> shArr[0] }
     Mode.MEAN -> { shArr: ShortArray ->
-        val sum = shArr.reduce { acc, sh -> (acc + sh).toShort() }
+        var sum = 0
+        for(sh in shArr) { sum += sh }
         round((sum / shArr.size).toDouble()).toInt().toShort()
     }
     Mode.MAX -> { shArr: ShortArray -> shArr.max() }
-    Mode.FIRST_HIT -> { shArr: ShortArray -> shArr.first { it >= minValue } }
+    Mode.FIRST_HIT -> { shArr: ShortArray ->
+        for(sh in shArr) { if(sh >= minValue) sh } // returns sh if hit
+        0
+    }
 }
 
 // (on ImageAndData<ArrayOps>)
@@ -175,7 +163,7 @@ fun getComposeImage(imgAndData: ImageAndData<ArrayOps>, view: View, depth: Float
     return imageBitmap // non-null
 }
 
-fun getComposeImageAngled(imgAndData: ImageAndData<ArrayOps>, view: ExtView, depth: Float, valRange: IntRange,
+suspend fun getComposeImageAngled(imgAndData: ImageAndData<ArrayOps>, view: ExtView, depth: Float, valRange: IntRange,
                           yzAngle: Double, xzAngle: Double, mode: Mode = Mode.NONE): ImageBitmap? {
     if(depth !in 0f..1f) {
         println("depth $depth out of range 0.0--1.0")
@@ -186,10 +174,13 @@ fun getComposeImageAngled(imgAndData: ImageAndData<ArrayOps>, view: ExtView, dep
         round(depth * imgArr.size.depth).toInt() //.also { println("Get image at index $it") }
     }
     val merge = modeMergeStrategy(mode, -16000)
+    val ensureAngleInRange = { angle: Double ->
+        if(angle > 180.0) angle - 360.0 else angle
+    }
     val shArr = when(view) {
         ExtView.SLICE -> imgArr.getMergedSlicesAtAnyOrientation(depthToIndex(depth), yzAngle, xzAngle, merge)
-        ExtView.SIDE -> imgArr.getMergedSlicesAtAnyOrientation(depthToIndex(depth), yzAngle, xzAngle+90.0, merge)
-        ExtView.TOP -> imgArr.getMergedSlicesAtAnyOrientation(depthToIndex(depth), yzAngle+90.0, xzAngle+90.0, merge)
+        ExtView.SIDE -> imgArr.getMergedSlicesAtAnyOrientation(depthToIndex(depth), yzAngle, ensureAngleInRange(xzAngle+90.0), merge)
+        ExtView.TOP -> imgArr.getMergedSlicesAtAnyOrientation(depthToIndex(depth), ensureAngleInRange(yzAngle+90.0), ensureAngleInRange(xzAngle+90.0), merge)
         ExtView.FREE -> imgArr.getMergedSlicesAtAnyOrientation(depthToIndex(depth), yzAngle, xzAngle, merge)
     }
     val shArrHByW = when(view) { // first is height, second width

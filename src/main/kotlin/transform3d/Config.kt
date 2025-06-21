@@ -6,6 +6,7 @@ import dev.romainguy.kotlin.math.Float3
 object Config {
     val gantryDirection = -1 // gantry rotation direction. 1 or -1
     val interpolateByDicomValue = true // if to interpolate by dicom value. if false interpolate by 512 / nofImages
+    val fillDepthToWidthSize = true
     val rotateDirection = Float3(1f, 1f, 1f)
     val windowName = "feetpic 📷🦶" //"MediView by wojkuzb"
     val sliderRange = MySliderRange(0f, 256f)
@@ -13,6 +14,7 @@ object Config {
     // UI:
     val displayImageSize = 256 //512
     val uiRescaleWidth = false
+    val useThreads = 8
 }
 class MySliderRange(val start: Float, val end: Float) {
     val range = start..(end - 1) // do not change

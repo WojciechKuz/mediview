@@ -60,6 +60,17 @@ object InterpolationSA {
         return target
     }
 
+    /** fillTo should be integer. If initial array is too short, pad it to desired size */
+    fun fillTo(dataList: ShortArray, targetSize: Int, padValue: Short): ShortArray {
+        val padStart = (targetSize - dataList.size) / 2
+        val target = ShortArray(targetSize) { i -> when {
+                i in (padStart until padStart+dataList.size) -> dataList[i - padStart]
+                else -> padValue
+            }
+        }
+        return target
+    }
+
     /** ensure floating index is within array bounds  */
     private fun ensureInBounds(expectedIndex: Double, size: Int): Double {
         val last = (size - 1).toDouble()
@@ -79,6 +90,10 @@ object InterpolationSA {
         val val2 = dataList[origI2] * w
         return round(val1 + val2).toInt().toShort()
     }
+    /** For interpolating between two values. If index falls in between real indices, it takes
+     * into account both values by a factor. Does not check bounds */
+    fun manualLinearInterpolationOf2(data0: Short, data1: Short, index: Double): Short =
+        round( (data0 * (1-index)) + (data1 * index) ).toInt().toShort()
 
     // also, 1:1 and fill rest with last. If to shorter, just cut off
 }

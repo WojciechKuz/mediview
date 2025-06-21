@@ -72,7 +72,6 @@ suspend fun loadDicomData(directory: String, fileName: String = ""): ImageAndDat
 
 
     if(oneDataMap == null) {
-        //println("ERR: No data found. (TagToDataMap is null)")
         throw Exception("No data found. (TagToDataMap is null)")
     }
 
@@ -86,50 +85,54 @@ suspend fun loadDicomData(directory: String, fileName: String = ""): ImageAndDat
     // 6. prepare interpolate z axis
     val slThk = oneDataMap[tagAsUInt("[0018 0050]")]?: throw tagNotFoundErr("[0018 0050]")
     val scaleZ = if( Config.interpolateByDicomValue ) InterpretData.interpretZScaleFactor(slThk) else {
-        println("backup scaleZ")
         (wthDat.value as UInt).toDouble() / imageList.size
     }
     val scaleLambda = array3D.prepareLambdaForScaleZ(scaleZ, InterpolationSA::rescaleBL)
 
-    // 7. prepare shear by gantry angle
+    // 7. prepare fill. Fill if less than 512 deep
+    val minValTag = oneDataMap[tagAsUInt("[0028 0106]")]?: throw tagNotFoundErr(tagAsUInt("[0028 0106]")) // -> Smallest Image Pixel Value (MIN VAL)
+    val maxValTag = oneDataMap[tagAsUInt("[0028 0107]")]?: throw tagNotFoundErr(tagAsUInt("[0028 0107]")) // -> Largest Image Pixel Value  (MAX VAL)
+    val dcmMin = minValTag.value as UInt
+    val dcmMax = maxValTag.value as UInt
+    // get tag rescale slope, rescale intercept
+    val rescItDat = oneDataMap[tagAsUInt("[0028 1052]")]?: throw tagNotFoundErr(tagAsUInt("[0028 1052]"))
+    val rescSlDat = oneDataMap[tagAsUInt("[0028 1053]")]?: throw tagNotFoundErr(tagAsUInt("[0028 1053]"))
+    val rescaleFunction = InterpretData.interpretRescale(rescItDat, rescSlDat)
+    val minRescaled = rescaleFunction(dcmMin.toShort())
+
+    fun fillingFunction(shArr: ShortArray, absI: Int) = InterpolationSA.fillTo(
+        shArr,
+        (wthDat.value as UInt).toInt(),
+        minRescaled
+    )
+    fun notFillingFunction(shArr: ShortArray, absI: Int) = shArr
+    val fillLambda: (ShortArray, Int) -> ShortArray =
+        if(Config.fillDepthToWidthSize) { ::fillingFunction } else { ::notFillingFunction }
+
+    // 8. prepare shear by gantry angle
     val gantryTag = tagAsUInt("[0018 1120]")
     val gantryDat = oneDataMap[gantryTag]?: throw tagNotFoundErr(gantryTag)
     val gantryAngle = InterpretData.interpretGantryAkaDetectorTilt(gantryDat)
     val gantryLambda = array3D.prepareLambdaForShearByGantry(gantryAngle,
         InterpolationSA::moveBL, array3D.size.height/2)
 
-    val absMin = array3D.array.min()
-    val absMax = array3D.array.max()
+    //val absMin = array3D.array.min()
+    //val absMax = array3D.array.max()
     //println("min $absMin, max $absMax in array before value rescale")
 
-    // Execute combined 6 and 7 lambdas
-    array3D.doSomethingOnYXArrayOfZArrays { shArr, absI ->
-        gantryLambda(scaleLambda(shArr, absI), absI)
+    // Execute combined 6, 7 and 8 lambdas
+    array3D.doSomethingOnYXArrayOfZArrays(
+        //(array3D.size.depth * scaleZ).toInt()
+        (wthDat.value as UInt).toInt() // because filling function
+    ) { shArr, absIdx ->
+        fillLambda ( gantryLambda ( scaleLambda (shArr, absIdx), absIdx), absIdx)
     }
-    //println("selectedPixel is " + array3D.isSelectedPixelTheSame().toString() + " step 6")
 
-    val whd = array3D.whd
-
-    // ❌ at this point we have 512x512x512 array ❌ Not true. rescaled with 1 / sliceThickness.
-
-    val minValTag = oneDataMap[tagAsUInt("[0028 0106]")]?: throw tagNotFoundErr(tagAsUInt("[0028 0106]")) // -> Smallest Image Pixel Value (MIN VAL)
-    val maxValTag = oneDataMap[tagAsUInt("[0028 0107]")]?: throw tagNotFoundErr(tagAsUInt("[0028 0107]")) // -> Largest Image Pixel Value  (MAX VAL)
-    val dcmMin = minValTag.value as UInt
-    val dcmMax = maxValTag.value as UInt
-    //println("min value $dcmMin, max value $dcmMax in dicom")
-
-
-    // 8. rescale hounsfield
-    // get tag rescale slope, rescale intercept
-    val rescItDat = oneDataMap[tagAsUInt("[0028 1052]")]?: throw tagNotFoundErr(tagAsUInt("[0028 1052]"))
-    val rescSlDat = oneDataMap[tagAsUInt("[0028 1053]")]?: throw tagNotFoundErr(tagAsUInt("[0028 1053]"))
-    val rescaleFunction = InterpretData.interpretRescale(rescItDat, rescSlDat)
-    //println("values will be rescaled to min ${rescaleFunction(absMin)} max ${rescaleFunction(absMax)}")
-
+    // 9. rescale Hounsfield
     array3D.transformEachPixel(rescaleFunction)
     //array3D.transformEachPixel { sh -> (sh * 4).toShort() }
-
-    //println("selectedPixel is " + array3D.isSelectedPixelTheSame().toString() + " step 8")
+    //println("min value $dcmMin, max value $dcmMax in dicom")
+    //println("values will be rescaled to min ${rescaleFunction(absMin)} max ${rescaleFunction(absMax)}")
 
     println("Processing images finished.")
 
