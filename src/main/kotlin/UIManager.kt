@@ -77,7 +77,7 @@ class UIManager(val uiImageMap: MutableMap<ExtView, ImageBitmap?>) {
     }
 
     /** Asynchronously call getImage(view) and put results in uiImageMap. */
-    fun assignNewImage(view: ExtView) { // discards previous operations if they didn't complete
+    private fun assignNewImage(view: ExtView) {
         LaunchQueue.startJob(view) {
             CoroutineScope(Dispatchers.Default).launch {
                 // assign, when getImage completes, without blocking
@@ -138,7 +138,7 @@ class UIManager(val uiImageMap: MutableMap<ExtView, ImageBitmap?>) {
         angleSliderVals[angle] = imgAngle
         val view = angle.toExtView()
 
-        // TODO discard previous operations if they didn't completed
+        // discards previous operations if they didn't complete
         assignNewImage(view)
     }
 

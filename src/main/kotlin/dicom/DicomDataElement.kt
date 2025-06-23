@@ -78,7 +78,7 @@ open class DicomDataElement<T>(
         if (value !is ByteArray) {
             throw IllegalArgumentException("DicomDataElement.value is not a ByteArray. Only ByteArrays can be converted to other types.")
         }
-        // TODO value to signed (u2) integer of length vl
+        // notTODO value to signed (u2) integer of length vl. Can be done using -> toString -> trim -> toInt
         return DicomDataElement(dicomTag, -1099)
     }
 

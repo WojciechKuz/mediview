@@ -22,7 +22,7 @@ class ImageSorter(directory: String) {
 
         //val sortedImagesData = sortByInstanceNumber(imagesDataMap)
         //val sortedImagesData = sortBySliceLocation(imagesDataMap)
-        val sortedImagesData = sortByImagePosition(imagesDataMap) // TODO sort by image position
+        val sortedImagesData = sortByImagePosition(imagesDataMap)
         return sortedImagesData
     }
 
