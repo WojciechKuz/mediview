@@ -1,5 +1,3 @@
-package transform3d
-
 import dev.romainguy.kotlin.math.Float3
 
 @Suppress("MayBeConstant")
@@ -10,10 +8,11 @@ object Config {
     val fillDepthToWidthSize = true
     val rotateDirection = Float3(1f, 1f, 1f)
     val windowName = "feetpic 📷🦶" //"MediView by wojkuzb"
+    val sliderSteps = 4 // really 5
     val sliderRange = MySliderRange(0f, 256f)
     val selectedPixel = (512 * 3 / 4) * 512 + (512 * 1 / 2)
     // UI:
-    val displayImageSize = 256 //512
+    val displayImageSize = 400 //512
     val uiRescaleWidth = false
     val useThreads = 8
 }

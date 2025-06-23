@@ -3,7 +3,6 @@ import dicom.TagToDataMap
 import dicom.filestructure.DataRead
 import dicom.tagAsUInt
 import transform3d.ArrayOps
-import transform3d.Config
 import transform3d.ImageAndData
 import transform3d.InterpolationSA
 import transform3d.InterpretData
@@ -33,7 +32,7 @@ suspend fun loadDicomData(directory: String, fileName: String = ""): ImageAndDat
     val dirName = directory // should contain only ONE set of images
 
     // new way - ez to parallelize:
-    val instanceNumTag = tagAsUInt("(0020,0013)") // It is 'IS' - integer string. Copied from ImageSorter to make it faster
+    val instanceNumTag = tagAsUInt("(0020,0013)") // It is 'IS' - integer string. Copied from transform3d.ImageSorter to make it faster
     val imagePosTag = tagAsUInt("(0020,0032)")
 
     // Interpolation will make other image's data useless. Keep only one. The image unique data are used only for ordering of them.

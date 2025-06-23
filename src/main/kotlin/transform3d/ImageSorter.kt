@@ -1,4 +1,5 @@
-import dicom.OBItemList
+package transform3d
+
 import dicom.TagToDataMap
 import dicom.filestructure.DataRead
 import dicom.tagAsUInt

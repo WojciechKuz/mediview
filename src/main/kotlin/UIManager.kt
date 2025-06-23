@@ -1,7 +1,6 @@
 import androidx.compose.ui.graphics.ImageBitmap
 import dicom.tagAsUInt
 import transform3d.ArrayOps
-import transform3d.Config
 import transform3d.ImageAndData
 import transform3d.InterpretData
 import transform3d.View

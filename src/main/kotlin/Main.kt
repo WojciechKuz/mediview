@@ -5,7 +5,6 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.snapshots.SnapshotStateMap
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
@@ -17,42 +16,9 @@ import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
 import transform3d.Angle
-import transform3d.Config
 import transform3d.Displaying
 import transform3d.ExtView
 import transform3d.Mode
-import transform3d.View
-import kotlin.collections.getValue
-import kotlin.collections.setValue
-
-/*
-import coil3.PlatformContext
-import coil3.request.ImageRequest
-import coil3.size.Size
-import coil3.compose.LocalPlatformContext
-*/
-
-/*
-@Composable
-@Preview
-fun App(imgsize: Int, layout3inRow: Boolean = false) {
-    MaterialTheme {
-        layout3plus1(imgsize, layout3inRow)
-        /*
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(2),
-            //rows = GridCells.Fixed(2),
-        ) {
-            //items(4)
-            // this scope is not @Composable!
-        }
-        */
-    }
-}
-*/
-
-fun imageModifier(imgsize: Int, color: Color) =
-    Modifier.width(imgsize.dp).height(imgsize.dp).border(1.dp, color)
 
 val rescaleWidth = if(Config.uiRescaleWidth) ContentScale.FillBounds else ContentScale.Fit
 
@@ -132,108 +98,6 @@ fun App() {
 
         } // main column end
     } // theme end
-}
-
-@Composable
-@Preview
-fun projectionBlock(imgsize: Int, uiImageMap: MutableMap<ExtView, ImageBitmap?>, manager: UIManager) {
-    Box {
-        Image(
-            choosePainter(uiImageMap[ExtView.FREE], "loading.jpg"),
-            "slice XY",
-            modifier = Modifier.width(imgsize.dp).height(imgsize.dp).border(1.dp, Color.DarkGray)
-                .pointerInput(Unit) {
-                    detectTapGestures(
-                        onPress = { offset ->
-                            val absx = offset.x / size.width
-                            val absy = offset.y / size.height
-                        },
-                    )
-                }
-        )
-    }
-    Box {
-        uiSliderBox(imgsize, true) {
-            singleSlider(imgsize, "kąt poziomy") { manager.angleSliderChange(it, Angle.XZAngle) }
-            singleSlider(imgsize, "kąt pionowy") { manager.angleSliderChange(it, Angle.YZAngle) }
-            singleSlider(imgsize, "głębokość") { manager.viewSliderChange(it, ExtView.FREE)}
-        }
-    }
-}
-
-@Composable
-@Preview
-fun animationBlock(imgsize: Int, uiImageMap: MutableMap<ExtView, ImageBitmap?>, manager: UIManager) {
-    Box {
-        Image(
-            choosePainter(uiImageMap[ExtView.FREE], "loading.jpg"),
-            "slice XY",
-            modifier = Modifier.width(imgsize.dp).height(imgsize.dp).border(1.dp, Color.DarkGray),
-        )
-    }
-    Box {
-        singleSlider(imgsize, "nic") {}
-    }
-}
-
-
-@Composable
-@Preview
-fun threeImagesBlock(imgsize: Int, uiImageMap: MutableMap<ExtView, ImageBitmap?>, manager: UIManager) {
-    val imageName = "loading.jpg" //"bounce.jpg"
-    Box {
-        Row(modifier = Modifier.fillMaxWidth()) {
-            Image(
-                choosePainter(uiImageMap[ExtView.SLICE], imageName),
-                "slice XY",
-                modifier = Modifier.width(imgsize.dp).height(imgsize.dp).border(1.dp, Color.Red).
-                pointerInput(Unit) {
-                    detectTapGestures(
-                        onPress = { offset ->
-                            val absx = offset.x / size.width
-                            val absy = offset.y / size.height
-                        },
-                        // Możesz dodać inne gesty, np. onDoubleTap, onLongPress
-                    )
-                },
-            )
-            Image(
-                choosePainter(uiImageMap[ExtView.TOP], imageName),
-                "top ZX",
-                modifier = Modifier.width(imgsize.dp).height(imgsize.dp).border(1.dp, Color.Green).
-                pointerInput(Unit) {
-                    detectTapGestures(
-                        onPress = { offset ->
-                            val absx = offset.x / size.width
-                            val absy = offset.y / size.height
-                        },
-                        // inne: onDoubleTap, onLongPress
-                    )
-                },
-                contentScale = rescaleWidth,
-            )
-            Image(
-                choosePainter(uiImageMap[ExtView.SIDE], imageName),
-                "side ZY",
-                modifier = Modifier.width(imgsize.dp).height(imgsize.dp).border(1.dp, Color.Blue).
-                pointerInput(Unit) {
-                    detectTapGestures(
-                        onPress = { offset ->
-                            val absx = offset.x / size.width
-                            val absy = offset.y / size.height
-                        },
-                        // inne: onDoubleTap, onLongPress
-                    )
-                },
-                contentScale = rescaleWidth,
-            )
-        }
-    }
-}
-@Composable
-@Preview
-fun threeSlidersBlock(imgsize: Int, manager: UIManager) {
-    Box(modifier = Modifier.fillMaxSize()) { uiSliders(imgsize, true, manager::viewSliderChange) }
 }
 
 @Composable
