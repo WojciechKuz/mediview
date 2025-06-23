@@ -73,18 +73,27 @@ class UIManager(val uiImageMap: MutableMap<ExtView, ImageBitmap?>) {
         depthSliderVals[view] = imgDepth
         // up to this point all operations in this function are light, thus not in CoroutineScope
 
-        // TODO discard previous operations if they didn't completed
-        CoroutineScope(Dispatchers.Default).launch {
-            uiImageMap[view] = getImage(view).also { img ->
-                // .let{} when not null and no other process writes
-                if (img == null) {
-                    println("Failed to get image for $view")
-                } else {
-                    println("Got $view image of size ${img.width}x${img.height}")
-                    println()
+        assignNewImage(view)
+    }
+
+    /** Asynchronously call getImage(view) and put results in uiImageMap. */
+    fun assignNewImage(view: ExtView) { // discards previous operations if they didn't complete
+        LaunchQueue.startJob(view) {
+            CoroutineScope(Dispatchers.Default).launch {
+                // assign, when getImage completes, without blocking
+                uiImageMap[view] = getImage(view).also { img ->
+                    // .let{} when not null and no other process writes
+                    if (img == null) {
+                        println("Failed to get image for $view")
+                    } else {
+                        println("Got $view image of size ${img.width}x${img.height}")
+                        println()
+                    }
                 }
+            }. // Coroutine end
+            invokeOnCompletion {
+                LaunchQueue.finishJob()
             }
-            // assign, when getImage completes, without blocking
         }
     }
 
@@ -104,18 +113,7 @@ class UIManager(val uiImageMap: MutableMap<ExtView, ImageBitmap?>) {
         depthSliderVals[view] = imgDepth
         // up to this point all operations in this function are light, thus not in CoroutineScope
 
-        CoroutineScope(Dispatchers.Default).launch {
-            uiImageMap[view] = getImage(view).also { img ->
-                // .let{} when not null and no other process writes
-                if (img == null) {
-                    println("Failed to get image for $view")
-                } else {
-                    println("Got $view image of size ${img.width}x${img.height}")
-                    println()
-                }
-            }
-            // assign, when getImage completes, without blocking
-        }
+        assignNewImage(view)
     }
 
     val angleVals = mutableMapOf( // in range -1.0 to 1.0
@@ -141,18 +139,7 @@ class UIManager(val uiImageMap: MutableMap<ExtView, ImageBitmap?>) {
         val view = angle.toExtView()
 
         // TODO discard previous operations if they didn't completed
-        CoroutineScope(Dispatchers.Default).launch {
-            uiImageMap[view] = getImage(view).also { img ->
-                // .let{} when not null and no other process writes
-                if (img == null) {
-                    println("Failed to get image for $view")
-                } else {
-                    println("Got $view image of size ${img.width}x${img.height}")
-                    println()
-                }
-            }
-            // assign, when getImage completes, without blocking
-        }
+        assignNewImage(view)
     }
 
     // normalized depths
