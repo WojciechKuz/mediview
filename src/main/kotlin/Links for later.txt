@@ -28,5 +28,7 @@ General about dicom
 Dicom pixel data
 -> https://dicom.nema.org/medical/dicom/current/output/html/part05.html#chapter_8
 
+Convenient tag description:
+https://dicom.innolitics.com/ciods/rt-dose/image-plane/00200037
 
 // kotlin list to map: associate, associateBy, associateTo

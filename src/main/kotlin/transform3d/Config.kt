@@ -5,7 +5,8 @@ import dev.romainguy.kotlin.math.Float3
 @Suppress("MayBeConstant")
 object Config {
     val gantryDirection = -1 // gantry rotation direction. 1 or -1
-    val interpolateByDicomValue = true // if to interpolate by dicom value. if false interpolate by 512 / nofImages
+    enum class InterpolateBy {To512, JustThickness, SliceThickn, SliceDist}
+    val interpolateBy = InterpolateBy.SliceDist
     val fillDepthToWidthSize = true
     val rotateDirection = Float3(1f, 1f, 1f)
     val windowName = "feetpic 📷🦶" //"MediView by wojkuzb"

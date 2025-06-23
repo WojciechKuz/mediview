@@ -6,6 +6,7 @@ Wybór pliku z dowolnego folderu, nie tylko resources!
 // https://dicom.nema.org/medical/dicom/current/output/html/part10.html#glossentry_DICOMFileFormat
 // TABLE A.1-1. Directory Content Example
 
+W danych nie ma: Spacing Between Slices (0018,0088)
 
 - OK z ByteArray tworzy ShortArray i kilka takich do mk.3DArray
 - DONE I spraw, żeby na podstawie transferSyntax interpretowało klasycznie, jako JPEG, albo nieskompresowane.

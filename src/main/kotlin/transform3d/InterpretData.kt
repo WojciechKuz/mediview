@@ -4,11 +4,8 @@ import dicom.DicomDataElement
 import dicom.OBItemList
 import dicom.OWItemList
 import dicom.TagToDataMap
-import dicom.adaptGreyInfo
 import dicom.jpegByteArrayToRawByteArray
-import dicom.jpegToByteArray
 import dicom.tagAsUInt
-import org.jetbrains.skia.ImageInfo
 import kotlin.collections.component1
 import kotlin.collections.component2
 
@@ -25,6 +22,7 @@ object InterpretData {
 
     val pixelDataTag = tagAsUInt("[7FE0 0010]")
     val transferSyntaxUIDTag = tagAsUInt("[0002 0010]")
+    val imagePosTag = tagAsUInt("(0020,0032)")
 
     private fun transferSyntaxUID(data: DicomDataElement<out Any>): ImageType {
         if(data.tag != transferSyntaxUIDTag) {
@@ -42,31 +40,38 @@ object InterpretData {
             else -> ImageType.UNKNOWN
         }
     }
-    /** For pixelSize element and distance between slices, get by how much z axis should be rescaled. So, returns 1/scale_Z */
-    fun interpretZScaleFactor(sliceDist: DicomDataElement<out Any>): Double {
-        val sliceTag = tagAsUInt("[0018 0050]") // ---> Slice Thickness
-        if(sliceDist.tag != sliceTag) {
-            throwWrongTag(sliceTag,sliceDist.tag)
+
+    fun getZPosition(data: DicomDataElement<out Any>): Double {
+        if(data.tag != imagePosTag) {
+            throwWrongTag(imagePosTag,data.tag)
         }
-        val strVal =  sliceDist.value as String
-        val sliceThickness = strVal.trim().toDouble()
-        return /* 1.0 / */ sliceThickness
+        return (data.value as String).trim().split("\\")[2].trim().toDouble() // z
+    }
+
+    /** For pixelSize element and distance between slices, get by how much z axis should be rescaled. */
+    fun interpretZScaleFactor(zPosition1: Double, zPosition2: Double, pxSpData: DicomDataElement<out Any>): Double {
+        val zDist = zPosition2 - zPosition1
+        val pxSpacing = (pxSpData.value as String).trim().split("\\")[0].trim().toDouble() // 0.43/0.43
+        return zDist / pxSpacing // 2.423/0.43 = 5.63
+    }
+
+    /** For pixelSize element and slice thickness (instead of distance between slices), get by how much z axis should be rescaled. */
+    fun interpretZScaleFactorBySliceWidth(sliceThickn: DicomDataElement<out Any>, pxSpData: DicomDataElement<out Any>): Double {
+        return interpretZScaleFactor(getSliceThickness(sliceThickn), 0.0, pxSpData)
+    }
+
+    /** This just returns slice thickness */
+    fun getSliceThickness(sliceThickn: DicomDataElement<out Any>): Double {
+        val sliceTag = tagAsUInt("[0018 0050]") // ---> Slice Thickness
+        if(sliceThickn.tag != sliceTag) {
+            throwWrongTag(sliceTag,sliceThickn.tag)
+        }
+        val sliceThickness = (sliceThickn.value as String).trim().toDouble()
+        return sliceThickness
     }
 
     val columnsTag = tagAsUInt("(0028,0011)") // x, width
     val rowsTag    = tagAsUInt("(0028,0010)") // y, height
-
-    fun getSkiaImageInfo(dataMap: TagToDataMap): ImageInfo {
-        val width = dataMap[columnsTag]?: throw tagNotFoundErr(columnsTag)
-        val height = dataMap[rowsTag]?: throw tagNotFoundErr(rowsTag)
-        val bitsAlloc = dataMap[tagAsUInt("(0028,0100)")]?: throw tagNotFoundErr("(0028,0100)")
-
-        return adaptGreyInfo(
-            width.value as UInt,
-            height.value as UInt,
-            bitsAlloc.value as UInt
-        )
-    }
 
     /** remove pixel data (7FE0,0010) from data map. Leave only descriptive elements. */
     fun removeImageData(dataMap: TagToDataMap): TagToDataMap
@@ -117,15 +122,6 @@ object InterpretData {
         )
     }
 
-    /** dataMap (with image as one of tags) ---> ImageData structure, which stores image and rest of the data separately.
-     * Also, new structure stores image as 2DShortArray. Rest of the data is still stored in TagToDataMap. */
-    fun dataMapToImageData(dataMap: TagToDataMap): ImageAndData<ShortArray> {
-        return ImageAndData<ShortArray>(
-            removeImageData(dataMap),
-            dataMapToImage(dataMap)
-        )
-    }
-
     /** dataMap (with image as one of tags) ---> image as ShortArray.
      * Discards other data! */
     fun dataMapToImage(dataMap: TagToDataMap): ShortArray {
@@ -138,17 +134,6 @@ object InterpretData {
         val bytesConfig = getBytesConfig(dataMap)
 
         return pixelsToShort(imageBytes, bytesConfig)
-    }
-
-    fun image1Dto2D(array1D: ShortArray, width: UInt, height: UInt) = image1Dto2D(array1D.toTypedArray(), width.toInt(), height.toInt())
-
-    fun image1Dto2D(array1D: Array<Short>, width: Int, height: Int): Short2D {
-        val idx = { x: Int, y: Int -> y * width + x }
-        return Array<Array<Short>>(height) { y ->
-            Array<Short>(width) { x ->
-                array1D[idx(x, y)]
-            }
-        }
     }
 
     enum class ImageType { JPEG, RAW_PIXELS, UNKNOWN }
