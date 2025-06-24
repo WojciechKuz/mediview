@@ -17,11 +17,11 @@ object ReadHelp {
         dialog.isVisible = true
         return dialog.directory + dialog.file
     }
-    /** Open system file picker. Get a pair of directory and file */
+    /** Open system file picker. Get a pair of directory and file. If cancelled, return empty directory */
     fun pickDirAndDicom(): Pair<String, String> {
         val dialog = FileDialog(null as Frame?, "Select DICOM File to Open", FileDialog.LOAD)
         dialog.isVisible = true
-        return Pair(dialog.directory, dialog.file)
+        return Pair(dialog.directory?: "", dialog.file?: "")
     }
     fun listFilesInDir(dir: String): List<String> {
         val dirF = File(dir)

@@ -20,7 +20,7 @@ class InterpolTest {
         val step = 10
         var printCount = 0
         for (i in 0..3632 step step) {
-            val x = sample(i.toShort(), 0, Short.MAX_VALUE)
+            val x = sample(i.toShort(), 0, Short.MAX_VALUE.toInt()).toInt()
             print(" [${i.toString(16).padStart(4)}]: ${x.toString(16).padEnd(4)} ")
             if(printCount % 10 == 9) println()
             printCount++

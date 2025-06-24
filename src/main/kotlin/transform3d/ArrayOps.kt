@@ -406,6 +406,7 @@ class ArrayOps(
      * @param depth
      * @param yzAngle
      * @param xzAngle both are angle in degrees
+     * @param merge function, that merges pixels in user-screen orientation. Examples: first element, max, min, average, etc.
      */
     suspend fun getMergedSlicesAtAnyOrientation(depth: Int, yzAngle: Double, xzAngle: Double, merge: (ShortArray) -> Short = { it[0] }): ShortArray {
         //println("AngledImg. depth: $depth, yzAngle: $yzAngle, xzAngle: $xzAngle")

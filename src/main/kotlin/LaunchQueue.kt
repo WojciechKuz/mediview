@@ -1,8 +1,3 @@
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import transform3d.ExtView
-
 fun interface MyJob {
     fun job(): Unit
 }
@@ -16,13 +11,21 @@ fun interface MyJob {
  *
  * Finished, and there's next job? Start next job.
  * Finished, and no new job? Set does nothing.
+ *
+ * Correct usage:
+ * ```
+ * allQueue.startJob(condition) {
+ *     someJob.invokeOnCompletion { allQueue.finishJob() }
+ * }
+ * ```
  */
-object LaunchQueue {
+class LaunchQueue {
     var waitingJob: MyJob? = null
     var working = false
 
-    fun startJob(view: ExtView, task: MyJob) {
-        if(view != ExtView.FREE) {
+    /** @param queueWhen if true add to queue, else execute immediately. */
+    fun startJob(queueWhen: Boolean, task: MyJob) {
+        if(!queueWhen) {
             task.job()
             return
         }

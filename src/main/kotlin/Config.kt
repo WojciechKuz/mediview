@@ -8,7 +8,7 @@ object Config {
     val fillDepthToWidthSize = true
     val rotateDirection = Float3(1f, 1f, 1f)
     val windowName = "feetpic 📷🦶" //"MediView by wojkuzb"
-    val sliderSteps = 4 // really 5
+    val sliderSteps = 0
     val sliderRange = MySliderRange(0f, 256f)
     val selectedPixel = (512 * 3 / 4) * 512 + (512 * 1 / 2)
     // UI:
@@ -19,6 +19,8 @@ object Config {
 class MySliderRange(val start: Float, val end: Float) {
     val range = start..(end - 1) // do not change
     val startVal = (end - start) / 2 + start // do not change
+    val minStartVal = start
+    val maxStartVal = end - 1
     /** To 0.0-1.0 range */
     fun normalizeValue(value: Float) = (value - start) / (end - start) // do not change
 }

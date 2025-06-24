@@ -35,7 +35,7 @@ TODO:
 
 - regulacja zakresu
 
-- zmiana palety barw array<short> -> wg zakresu na ekran -> array<byte 255>
+- DONE zmiana palety barw array<short> -> wg zakresu na ekran -> array<byte 255>
 
 Rzeczy pozostałe do uwzględnienia:
 !        "[0028 0106]", // -> Smallest Image Pixel Value (MIN VAL)

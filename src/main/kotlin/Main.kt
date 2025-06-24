@@ -1,24 +1,20 @@
 import androidx.compose.desktop.ui.tooling.preview.Preview
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.border
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
-import transform3d.Angle
 import transform3d.Displaying
 import transform3d.ExtView
 import transform3d.Mode
+import transform3d.MyColor
 
 val rescaleWidth = if(Config.uiRescaleWidth) ContentScale.FillBounds else ContentScale.Fit
 
@@ -52,8 +48,18 @@ fun App() {
             var mode by remember { mutableStateOf(manager.mode) }
             var modeText by remember { mutableStateOf("Mode: ${manager.mode}") }
             var displ by remember { mutableStateOf(manager.displaying) }
-            var displText by remember { mutableStateOf("Mode: ${manager.displaying}") }
+            var displText by remember { mutableStateOf("Display: ${manager.displaying}") }
+            //var color by remember { mutableStateOf(manager.color) }
+            var colorText by remember { mutableStateOf("Colors: ${manager.color}") }
             Row {
+                Button(
+                    onClick = {
+                        manager.loadDicom()
+                    },
+                    modifier = Modifier.padding(end = 8.dp)
+                ) {
+                    Text("Load again")
+                }
                 Button(
                     onClick = {
                         manager.mode = when (manager.mode) {
@@ -64,6 +70,7 @@ fun App() {
                         }
                         mode = manager.mode
                         modeText = "Mode: ${manager.mode}"
+                        manager.buttonChange()
                     },
                     modifier = Modifier.padding(end = 8.dp)
                 ) {
@@ -78,11 +85,29 @@ fun App() {
                         }
                         displ = manager.displaying
                         displText = "Display: ${manager.displaying}"
+                        if(manager.displaying != Displaying.ANIMATION) // animation is same view as projection, no need to redraw
+                            manager.buttonChange()
                     },
+                    modifier = Modifier.padding(end = 8.dp)
                 ) {
                     Text(displText)
                 }
+                Button(
+                    onClick = {
+                        manager.color = when (manager.color) {
+                            MyColor.GREYSCALE -> MyColor.RYGSCALE
+                            MyColor.RYGSCALE -> MyColor.GREYSCALE
+                        }
+                        //color = manager.color
+                        colorText = "Colors: ${manager.color}"
+                        manager.buttonChange()
+                    },
+                    modifier = Modifier.padding(end = 8.dp)
+                ) {
+                    Text(colorText)
+                }
             }
+
             when(displ) {
                 Displaying.THREE -> {
                     threeImagesBlock(imgsize, uiImageMap, manager)
@@ -96,8 +121,30 @@ fun App() {
                 }
             }
 
+            alwaysSliders(manager, mode)
+
         } // main column end
     } // theme end
+}
+
+@Composable
+@Preview
+fun alwaysSliders(manager: UIManager, mode: Mode) {
+    val imgsize = Config.displayImageSize
+    Box {
+        Row {
+            colorfulSlider(imgsize, "min value", getSliderDefaultColors(Color.DarkGray), startVal = Config.sliderRange.minStartVal) {
+                manager.setLowestValue(it)
+            }
+            colorfulSlider(imgsize, "max value", getSliderDefaultColors(Color.DarkGray), startVal = Config.sliderRange.maxStartVal) {
+                manager.setHighestValue(it)
+            }
+            if(mode == Mode.FIRST_HIT /*|| mode == Mode.NONE*/)
+                colorfulSlider(imgsize, "first hit min value", getSliderDefaultColors(Color.DarkGray), startVal = Config.sliderRange.minStartVal) {
+                    manager.setFirstHitValue(it)
+                }
+        }
+    }
 }
 
 @Composable

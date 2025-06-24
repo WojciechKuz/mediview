@@ -4,6 +4,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.Slider
@@ -40,7 +41,7 @@ fun projectionBlock(imgsize: Int, uiImageMap: MutableMap<ExtView, ImageBitmap?>,
         )
     }
     Box {
-        uiSliderBox(imgsize, true) {
+        Row {
             var flatSliderPosition by remember { mutableStateOf(Config.sliderRange.startVal) }
             val modifier = Modifier.width(imgsize.dp)
             Column {
@@ -52,7 +53,7 @@ fun projectionBlock(imgsize: Int, uiImageMap: MutableMap<ExtView, ImageBitmap?>,
                         flatSliderPosition = it
                         manager.angleSliderChange(it, Angle.XZAngle)
                     },
-                    colors = getSliderColors(Color.DarkGray),
+                    colors = getSliderDefaultColors(Color.DarkGray),
                     steps = Config.sliderSteps,
                     modifier = modifier,
                 )

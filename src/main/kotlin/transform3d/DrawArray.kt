@@ -13,48 +13,70 @@ fun fasterTransformPixelsToRGBA(source: ShortArray): ByteArray {
     // 4 bytes: R, G, B, alpha
     return ByteArray(source.size * 4) { bi ->
         if(bi % 4 == 3) {
-            0xFF.toByte()       // alpha
+            maxByte       // alpha
         } else {
             (source[bi/4] / 256).toByte() // R, G, B
         }
     }
 }
 
+private val byteRange = ReARanger(0, 255)
 /** map value from range min..max to range 0..255 */
-fun sample(value: Short, minValue: Int, maxValue: Int): Byte =
-    sample(value, minValue.toShort(), maxValue.toShort()).toByte()
-
-/** map value from range min..max to range 0..255 */
-fun sample(value: Short, minValue: Short, maxValue: Short): Int {
+fun sample(value: Short, minValue: Int, maxValue: Int): Byte {
     return when {
-        (value < minValue) -> 0
+        (value < minValue) -> byte0
         (value in minValue..maxValue) -> {
-            val sourceR = ReARanger(minValue, maxValue)
-            val targetR = ReARanger(0, 255)
-            sourceR.valueToRange(value, targetR).toInt()
+            val sourceR = ReARanger(minValue.toShort(), maxValue.toShort())
+            //val targetR = ReARanger(0, 255)
+            sourceR.valueToRange(value, byteRange).toByte()
         }
-        (value > maxValue) -> 255
+        (value > maxValue) -> maxByte
         else -> {
-            throw Exception("This will never happen")
+            throw Exception("DrawArray.kt/sample(): This will never happen")
         }
     }//.toUShort().toUByte().toByte()
 }
 
-fun fasterTransformPixelsToRGBA(source: ShortArray, fromRange: IntRange): ByteArray =
-    fasterTransformPixelsToRGBA(source, fromRange.start, fromRange.endInclusive)
-/** Short value to RGBA value */
-fun fasterTransformPixelsToRGBA(source: ShortArray, minValue: Int, maxValue: Int): ByteArray {
+private const val maxByte = 0xFF.toByte()
+private const val byte0 = 0x00.toByte()
+private const val sh0 = 0.toShort()
+
+/** Short value to RGBA value as greyscale */
+fun fasterTransformPixelsToRGBA(source: ShortArray, fromRange: IntRange): ByteArray {
     // 4 bytes: R, G, B, alpha
     return ByteArray(source.size * 4) { bi ->
         if(bi % 4 == 3) {
-            0xFF.toByte()       // alpha
+            maxByte       // alpha
         } else {
-            sample(source[bi/4], minValue, maxValue) // R, G, B
+            sample(source[bi/4], fromRange.start, fromRange.endInclusive) // R, G, B
         }
     }
 }
 
-/** BYTES per pixel. 1, 2 or 4 */
+val redYellowGreenRange = ReARanger(0, 511)
+/** Short value to RGBA value as red-yellow-green scale */
+fun redYellowGreenTransformPixelsToRGBA(source: ShortArray, fromRange: IntRange): ByteArray {
+    // 4 bytes: R, G, B, alpha
+    return ByteArray(source.size * 4) { bi ->
+        val sourceR = ReARanger(fromRange.start.toShort(), fromRange.endInclusive.toShort())
+        val ryg = sourceR.valueToRange(source[bi/4], redYellowGreenRange)
+        when {
+            bi%4 == 0 -> {
+                //if (ryg < 18.toShort()) byte0
+                if (ryg > 255) maxByte else ryg.toByte()
+            } // Red
+            bi%4 == 1 -> {
+                //if (ryg < 18.toShort()) byte0
+                if (ryg < 256) maxByte else (511 - ryg).toByte()
+            } // Green
+            bi%4 == 2 -> byte0 // Blue
+            bi % 4 == 3 -> maxByte // alpha
+            else -> throw Exception("This will never happen")
+        }
+    }
+}
+
+/** ByteArray -> Compose Image. BYTES per pixel: 1, 2 or 4 */
 fun rawByteArrayToImageBitmap(bytes: ByteArray, width: Int, height: Int, bytesPerPx: Int): ImageBitmap {
     val sourceInfo = ImageInfo(
         width, height,
@@ -117,8 +139,14 @@ enum class Angle {
     /** poziomy kąt */ XZAngle,
     /** pionowy kąt */ YZAngle,
 }
+enum class MyColor {
+    GREYSCALE,
+    RYGSCALE
+}
 
-fun modeMergeStrategy(mode: Mode, minValue: Int): (ShortArray) -> Short = when(mode) {
+/** Provides pixel merging function vor given mode.
+ * @param minValue used only in FIRST_HIT mode. */
+fun modeMergeStrategy(mode: Mode, minValue: Short): (ShortArray) -> Short = when(mode) {
     Mode.NONE -> { shArr: ShortArray -> shArr[0] }
     Mode.MEAN -> { shArr: ShortArray ->
         var sum = 0
@@ -133,7 +161,7 @@ fun modeMergeStrategy(mode: Mode, minValue: Int): (ShortArray) -> Short = when(m
 }
 
 // (on ImageAndData<ArrayOps>)
-/** @param depth value from 0.0 to 1.0 */
+/** @param depth value from 0.0 to 1.0 */ // TODO identical function + Color and Mode parameters. Then, operation on Z axis needed
 fun getComposeImage(imgAndData: ImageAndData<ArrayOps>, view: View, depth: Float, valRange: IntRange): ImageBitmap? {
     if(depth !in 0f..1f) {
         println("depth $depth out of range 0.0--1.0")
@@ -163,37 +191,50 @@ fun getComposeImage(imgAndData: ImageAndData<ArrayOps>, view: View, depth: Float
     return imageBitmap // non-null
 }
 
+/** Use this function to get image bitmap that can be displayed in UI.
+ * @param imgAndData dataMap + ArrayOps
+ * @param view which view to display
+ * @param depth depth of view, normalized
+ * @param valRange value range in which values will have scaled color. Values outside this range take max or min value.
+ * @param yzAngle vertical angle, degrees
+ * @param xzAngle horizontal angle, degrees
+ * @param mode which mode */
 suspend fun getComposeImageAngled(imgAndData: ImageAndData<ArrayOps>, view: ExtView, depth: Float, valRange: IntRange,
-                          yzAngle: Double, xzAngle: Double, mode: Mode = Mode.NONE): ImageBitmap? {
+                          yzAngle: Double, xzAngle: Double, mode: Mode = Mode.NONE, color: MyColor = MyColor.GREYSCALE, firstHitVal: Short = -16000): ImageBitmap? {
     if(depth !in 0f..1f) {
         println("depth $depth out of range 0.0--1.0")
         return null
     }
     val imgArr = imgAndData.imageArray
-    val depthToIndex = { depth: Float ->
-        round(depth * imgArr.size.depth).toInt() //.also { println("Get image at index $it") }
-    }
-    val merge = modeMergeStrategy(mode, -16000)
+    val depthIndex = round(depth * imgArr.size.depth).toInt() //.also { println("Get image at index $it") }
+    val merge = modeMergeStrategy(mode, firstHitVal)
     val ensureAngleInRange = { angle: Double ->
         if(angle > 180.0) angle - 360.0 else angle
     }
-    val shArr = when(view) {
-        ExtView.SLICE -> imgArr.getMergedSlicesAtAnyOrientation(depthToIndex(depth), yzAngle, xzAngle, merge)
-        ExtView.SIDE -> imgArr.getMergedSlicesAtAnyOrientation(depthToIndex(depth), yzAngle, ensureAngleInRange(xzAngle+90.0), merge)
-        ExtView.TOP -> imgArr.getMergedSlicesAtAnyOrientation(depthToIndex(depth), ensureAngleInRange(yzAngle+90.0), ensureAngleInRange(xzAngle+90.0), merge)
-        ExtView.FREE -> imgArr.getMergedSlicesAtAnyOrientation(depthToIndex(depth), yzAngle, xzAngle, merge)
+    /** Angles. first is yzAngle, second is xzAngle */
+    val adjustedAngles = when(view) {
+        ExtView.SLICE -> yzAngle to xzAngle
+        ExtView.SIDE -> yzAngle to ensureAngleInRange(xzAngle+90.0)
+        ExtView.TOP -> ensureAngleInRange(yzAngle+90.0) to ensureAngleInRange(xzAngle+90.0)
+        ExtView.FREE -> yzAngle to xzAngle
     }
-    val shArrHByW = when(view) { // first is height, second width
+    val shArr = imgArr.getMergedSlicesAtAnyOrientation(depthIndex, adjustedAngles.first, adjustedAngles.second, merge)
+    /** Size. first is height, second is width */
+    val shArrSizeHByW = when(view) {
         ExtView.SLICE -> imgArr.size.height to imgArr.size.width // YX for Z
         ExtView.SIDE -> imgArr.size.height to imgArr.size.depth  // YZ for X
         ExtView.TOP -> imgArr.size.width to imgArr.size.depth    // XZ for Y
         ExtView.FREE -> imgArr.size.height to imgArr.size.width // YX for Z
     }
+    val bytes = when(color) {
+        MyColor.GREYSCALE -> fasterTransformPixelsToRGBA(shArr, valRange)
+        MyColor.RYGSCALE -> redYellowGreenTransformPixelsToRGBA(shArr, valRange)
+    }
 
     val imageBitmap = rawByteArrayToImageBitmap(
-        fasterTransformPixelsToRGBA(shArr, valRange),
-        shArrHByW.second,
-        shArrHByW.first,
+        bytes,
+        shArrSizeHByW.second,
+        shArrSizeHByW.first,
         4
     )
     return imageBitmap // non-null
