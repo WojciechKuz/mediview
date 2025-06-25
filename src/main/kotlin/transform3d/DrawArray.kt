@@ -48,7 +48,11 @@ fun fasterTransformPixelsToRGBA(source: ShortArray, fromRange: IntRange): ByteAr
         if(bi % 4 == 3) {
             maxByte       // alpha
         } else {
-            sample(source[bi/4], fromRange.start, fromRange.endInclusive) // R, G, B
+            if(source[bi/4] == Config.meansColorRed) { // if true, mark pixel with red
+                Config.redPixel[bi%4]
+            } else {
+                sample(source[bi/4], fromRange.start, fromRange.endInclusive) // R, G, B
+            }
         }
     }
 }
@@ -60,7 +64,11 @@ fun redYellowGreenTransformPixelsToRGBA(source: ShortArray, fromRange: IntRange)
     return ByteArray(source.size * 4) { bi ->
         val sourceR = ReARanger(fromRange.start.toShort(), fromRange.endInclusive.toShort())
         val ryg = sourceR.valueToRange(source[bi/4], redYellowGreenRange)
+
         when {
+            source[bi/4] == Config.meansColorRed -> { // if true, mark pixel with red
+                Config.redPixel[bi%4]
+            }
             bi%4 == 0 -> {
                 //if (ryg < 18.toShort()) byte0
                 if (ryg > 255) maxByte else ryg.toByte()
@@ -100,7 +108,7 @@ enum class View {
     SIDE,   // zy
     TOP     // zx
 }
-val viewDepth = { view: View, sizes: WidthHeightDepth -> when(view) {
+val viewDepth = { view: View, sizes: MySize3 -> when(view) {
     View.SLICE -> sizes.depth
     View.SIDE -> sizes.width
     View.TOP -> sizes.height
@@ -125,6 +133,7 @@ fun ExtView.toView() = when(this) {
 fun Angle.toExtView() = ExtView.FREE
 
 enum class Mode {
+    /** Won't mark first hit value. Besides that, same as none but faster */ EFFICIENT_NONE,
     NONE,
     MEAN,
     MAX,
@@ -141,49 +150,84 @@ enum class Angle {
 }
 enum class MyColor {
     GREYSCALE,
-    RYGSCALE
+    /** Red, yellow, green scale */ RYGSCALE
+}
+
+private fun firstHit(shArr: ShortArray, minValue: Short): Short {
+    for(sh in shArr) {
+        if(sh >= minValue) return sh
+    }
+    return 0
+}
+
+/** Check if pixel in None mode meets firstHit condition.
+ * This means pixel is greater or equal minValue, and no pixel before it meets this condition.
+ * @param wholeArr here is NOT [index, end], but [start, end].
+ * @return value from config marking to color this pixel red */
+fun redOnNone(wholeArr: ShortArray, minValue: Short, realDepth: Int): Short {
+    if(wholeArr[realDepth] < minValue) return wholeArr[realDepth]
+    for(i in 0 until realDepth) {
+        if(wholeArr[i] >= minValue) return wholeArr[realDepth]
+    }
+    return Config.meansColorRed
 }
 
 /** Provides pixel merging function vor given mode.
- * @param minValue used only in FIRST_HIT mode. */
-fun modeMergeStrategy(mode: Mode, minValue: Short): (ShortArray) -> Short = when(mode) {
-    Mode.NONE -> { shArr: ShortArray -> shArr[0] }
+ * @param minValue used in FIRST_HIT and NONE mode.
+ * @param depth In NONE mode used as depth. */
+fun modeMergeStrategy(mode: Mode, minValue: Short, depth: Int = -16000): (ShortArray) -> Short = when(mode) {
+    Mode.EFFICIENT_NONE -> { shArr: ShortArray -> shArr[0] } // EFFICIENT_NONE should not use this function.
+    Mode.NONE -> { shArr: ShortArray -> redOnNone(shArr, minValue, depth) } // EFFICIENT_NONE should not use this function
     Mode.MEAN -> { shArr: ShortArray ->
         var sum = 0
         for(sh in shArr) { sum += sh }
         round((sum / shArr.size).toDouble()).toInt().toShort()
     }
     Mode.MAX -> { shArr: ShortArray -> shArr.max() }
-    Mode.FIRST_HIT -> { shArr: ShortArray ->
+    Mode.FIRST_HIT -> { shArr: ShortArray -> firstHit(shArr, minValue) }
+    /*    { shArr: ShortArray ->
         for(sh in shArr) { if(sh >= minValue) sh } // returns sh if hit
         0
-    }
+    } */ // did not work as intended. Use standard function
 }
 
 // (on ImageAndData<ArrayOps>)
-/** @param depth value from 0.0 to 1.0 */ // TODO identical function + Color and Mode parameters. Then, operation on Z axis needed
-fun getComposeImage(imgAndData: ImageAndData<ArrayOps>, view: View, depth: Float, valRange: IntRange): ImageBitmap? {
+/** @param depth value from 0.0 to 1.0 */
+suspend fun getComposeImage(imgAndData: ImageAndData<ArrayOps>, view: View, depth: Float, valRange: IntRange,
+                    mode: Mode = Mode.NONE, color: MyColor = MyColor.GREYSCALE, firstHitVal: Short = -16000): ImageBitmap? {
     if(depth !in 0f..1f) {
         println("depth $depth out of range 0.0--1.0")
         return null
     }
     val imgArr = imgAndData.imageArray
-    val depthToIndex = { depth: Float, view: View ->
-        round(depth * viewDepth(view, imgArr.whd)).toInt() //.also { println("Get image at index $it") }
+    val depthIndex = if(mode == Mode.NONE) 0 else round(depth * viewDepth(view, imgArr.size)).toInt() // NONE needs to start at 0
+    val shArr = if(mode == Mode.EFFICIENT_NONE) {
+        when(view) {
+            View.SLICE -> imgArr.getFlatYXforZ(depthIndex)
+            View.SIDE -> imgArr.getFlatYZforX(depthIndex)
+            View.TOP -> imgArr.getFlatXZforY(depthIndex)
+        }
+    } else {
+        val merge = modeMergeStrategy(mode, firstHitVal, depthIndex)
+        when(view) {
+            View.SLICE -> imgArr.getFlatYXforMergedZ(depthIndex, merge)
+            View.SIDE -> imgArr.getFlatYZforMergedX(depthIndex, merge)
+            View.TOP -> imgArr.getFlatXZforMergedY(depthIndex, merge)
+        }
     }
-    val shArr = when(view) {
-        View.SLICE -> imgArr.getFlatYXforZ(depthToIndex(depth, view))
-        View.SIDE -> imgArr.getFlatYZforX(depthToIndex(depth, view))
-        View.TOP -> imgArr.getFlatXZforY(depthToIndex(depth, view))
-    }
+
     val shArrHByW = when(view) { // first is height, second width
         View.SLICE -> imgArr.size.height to imgArr.size.width // YX for Z
         View.SIDE -> imgArr.size.height to imgArr.size.depth  // YZ for X
         View.TOP -> imgArr.size.width to imgArr.size.depth    // XZ for Y
     }
+    val bytes = when(color) {
+        MyColor.GREYSCALE -> fasterTransformPixelsToRGBA(shArr, valRange)
+        MyColor.RYGSCALE -> redYellowGreenTransformPixelsToRGBA(shArr, valRange)
+    }
 
-    val imageBitmap = rawByteArrayToImageBitmap(
-        fasterTransformPixelsToRGBA(shArr, valRange),
+    val imageBitmap = rawByteArrayToImageBitmap(            // TODO test code changes
+        bytes,
         shArrHByW.second,
         shArrHByW.first,
         4
@@ -207,7 +251,7 @@ suspend fun getComposeImageAngled(imgAndData: ImageAndData<ArrayOps>, view: ExtV
     }
     val imgArr = imgAndData.imageArray
     val depthIndex = round(depth * imgArr.size.depth).toInt() //.also { println("Get image at index $it") }
-    val merge = modeMergeStrategy(mode, firstHitVal)
+    val merge = modeMergeStrategy(mode, firstHitVal, depthIndex)
     val ensureAngleInRange = { angle: Double ->
         if(angle > 180.0) angle - 360.0 else angle
     }

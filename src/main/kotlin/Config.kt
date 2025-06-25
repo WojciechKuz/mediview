@@ -11,6 +11,9 @@ object Config {
     val sliderSteps = 0
     val sliderRange = MySliderRange(0f, 256f)
     val selectedPixel = (512 * 3 / 4) * 512 + (512 * 1 / 2)
+    val oddlySpecificValue = -16007
+    /** Mark a pixel to color it red. */ val meansColorRed: Short = 32730 // max is 32768
+    val redPixel = byteArrayOf(160.toByte(), 12, 0x00, 0xFF.toByte()) // 160, 12, 0, 255
     // UI:
     val displayImageSize = 400 //512
     val uiRescaleWidth = false

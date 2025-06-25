@@ -27,7 +27,7 @@ class UIManager(val uiImageMap: MutableMap<ExtView, ImageBitmap?>) {
     private val freeQueue = LaunchQueue()
     private val allQueue = LaunchQueue()
 
-    var mode = Mode.NONE
+    var mode = Mode.EFFICIENT_NONE
     var displaying = Displaying.THREE
     var color = MyColor.GREYSCALE
 
@@ -134,6 +134,7 @@ class UIManager(val uiImageMap: MutableMap<ExtView, ImageBitmap?>) {
         println()
         //printInfoOnce()
         println()
+        System.gc()
     } // loadDicom.launch end
 
     /** slider in UI moved */
@@ -280,7 +281,6 @@ class UIManager(val uiImageMap: MutableMap<ExtView, ImageBitmap?>) {
         val depth: Float = depthValues[view]?: throw Exception("depthValues does not contain $view")
 
 
-
         if(view == ExtView.FREE) {
             val xzAngle = angleValues[Angle.XZAngle]?: throw Exception("angleVals does not contain $view")
             val yzAngle = angleValues[Angle.YZAngle]?: throw Exception("angleVals does not contain $view")
@@ -289,7 +289,7 @@ class UIManager(val uiImageMap: MutableMap<ExtView, ImageBitmap?>) {
 
             val time = measureTimeMillis {
                 composeImg = getComposeImageAngled(
-                    imageAndData, view, depth, getImageValueRange(),
+                    imageAndData, view, depth, adjustedValueRange,
                     yzAngle * 180.0, xzAngle * 180.0, mode, color, firstHitValue
                 )
             }
@@ -298,8 +298,10 @@ class UIManager(val uiImageMap: MutableMap<ExtView, ImageBitmap?>) {
         }
 
         val composeImg: ImageBitmap?
-        val time = measureTimeMillis { // TODO getComposeImage should take more parameters
-            composeImg = getComposeImage(imageAndData, view.toView(), depth, getImageValueRange())
+        val time = measureTimeMillis {
+            composeImg = getComposeImage(
+                imageAndData, view.toView(), depth, adjustedValueRange,
+                mode, color, firstHitValue)
         }
         println("Image in $time ms")
 

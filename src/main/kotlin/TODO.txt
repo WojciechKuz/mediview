@@ -16,8 +16,6 @@ W danych nie ma: Spacing Between Slices (0018,0088)
     - prostopadle done,
     - skośnie done
 
-TODO:
-
 - wyświetl przekrój w main, daj to na ekran!
     FIXDONE wysokość jest podwojona
     FIXDONE whd zawiera dane sprzed przetworzenia obrazka. Aktualizuj wymiary przy zmianie array3d
@@ -33,8 +31,6 @@ TODO:
     EEEE - Te niskopoziomowe funkcje bez użycia kolekcji: endianIntParser (400ms dla 60 obrazków), transformEachPixel
     EEEE - ostatnia hash mapa zamiast mapy.
 
-- regulacja zakresu
-
 - DONE zmiana palety barw array<short> -> wg zakresu na ekran -> array<byte 255>
 
 Rzeczy pozostałe do uwzględnienia:
@@ -42,19 +38,27 @@ Rzeczy pozostałe do uwzględnienia:
 !        "[0028 0107]", // -> Largest Image Pixel Value  (MAX VAL)
 
 
+
+TODO:
+
 --- Zadanie 2:
+
 - 3 rzuty: transversal, sagittal, coronal. OK, to po prostu xy zy zx
 
+- DONE zrównoleglone liczenie projekcji
+- DONE obrót wokół środka
+- DONE regulacja zakresu
+- podświetlenie first hit
 - tryby:
-    - none - jak w zad 1
-    - średnia
-    - max
-    - first hit - pierwsza wartość większa od: wartość wybrana suwakiem. Gdy piksel spełnia wymóg w trybie none, to kolor czerwony
-- dodatkowe wymagania:
-    - DONE zrównoleglone liczenie projekcji
-    - DONE obrót wokół środka
-    - podświetlenie first hit
-    - eksport animacji sekwencja png lub gif
+    DONE - none - jak w zad 1
+    DONE - średnia
+    DONE - max
+    DONE - first hit - pierwsza wartość większa od: wartość wybrana suwakiem.
+    FIXME Gdy piksel spełnia wymóg FIRST_HIT w trybie none, to kolor czerwony
+
+- wskaźnik wartości onHover
+- klik -> przestaw pozostałe 2 widoki. Opcjonalnie w trybie EFFICIENT_NONE, przy przeciąganiu na bieżąco
+
 - animacja - obrót o wybrany kąt i liczba klatek
     - na wszystkich 3 przekrojach?
     - wyświetl animację
@@ -64,7 +68,8 @@ Rzeczy pozostałe do uwzględnienia:
       - regulacja prędkości
       - tryb ping-pong
       - wizualizacja kąta obrotu: podane stopnie albo wskaźnik
+    - eksport animacji sekwencja png lub gif
 
-Ok, obroty/projekcje przez macierze.
 Tylko eksport animacji
-I te tryby
+
+Dlaczego środkowy widok - top jest wolniejszy od side? (poza trybem efficient none)

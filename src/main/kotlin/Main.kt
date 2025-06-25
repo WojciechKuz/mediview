@@ -63,10 +63,11 @@ fun App() {
                 Button(
                     onClick = {
                         manager.mode = when (manager.mode) {
+                            Mode.EFFICIENT_NONE -> Mode.NONE
                             Mode.NONE -> Mode.MEAN
                             Mode.MEAN -> Mode.MAX
                             Mode.MAX -> Mode.FIRST_HIT
-                            Mode.FIRST_HIT -> Mode.NONE
+                            Mode.FIRST_HIT -> Mode.EFFICIENT_NONE
                         }
                         mode = manager.mode
                         modeText = "Mode: ${manager.mode}"
@@ -139,7 +140,7 @@ fun alwaysSliders(manager: UIManager, mode: Mode) {
             colorfulSlider(imgsize, "max value", getSliderDefaultColors(Color.DarkGray), startVal = Config.sliderRange.maxStartVal) {
                 manager.setHighestValue(it)
             }
-            if(mode == Mode.FIRST_HIT /*|| mode == Mode.NONE*/)
+            if(mode == Mode.FIRST_HIT || mode == Mode.NONE)
                 colorfulSlider(imgsize, "first hit min value", getSliderDefaultColors(Color.DarkGray), startVal = Config.sliderRange.minStartVal) {
                     manager.setFirstHitValue(it)
                 }

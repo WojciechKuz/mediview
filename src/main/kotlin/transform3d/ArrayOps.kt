@@ -28,10 +28,12 @@ class ArrayOps(
         initialHeight,
         array.size/initialWidth/initialHeight,
     )
-
-    val whd: WidthHeightDepth
-            get() = size.toWhd()
-            //private set(value) { size = MySize3(value) }
+    /** Same as size/2 but keeping this for efficiency */
+    var center: MySize3 = MySize3(
+        initialWidth/2,
+        initialHeight/2,
+        array.size/initialWidth/initialHeight/2
+    )
 
     // Builder OK, but create 3d array of some library!
     class Array3DBuilder() {
@@ -146,27 +148,22 @@ class ArrayOps(
     }
 
     /** map pixels. Writes to internal list. Returns itself. */
-    suspend fun transformEachPixel(transform: (Short) -> Short): ArrayOps { // Number of coroutines can be minimized with use of coroutineForLoop()
-        val indi3 = Indices3(size)
-        val jobList = mutableListOf<Job>()
-        for(zi in 0 until size.depth) {
-            val job = CoroutineScope(Dispatchers.Default).launch {
-                for (yi in 0 until size.height) {
-                    for(xi in 0 until size.width) {
-                        val absi = indi3.absoluteIndexOf3(xi, yi, zi)
-                        //if(absi == 15367) println("Transforming ${array[absi]} to ${transform(array[absi])}")
-                        array[absi] = transform(array[absi])
-                    }
+    suspend fun transformEachPixel(transform: (Short) -> Short): ArrayOps {
+        coroutineForLoop(size.depth) { zi ->
+            for (yi in 0 until size.height) {
+                for(xi in 0 until size.width) {
+                    val absi = absoluteIndexOf3(xi, yi, zi)
+                    //if(absi == 15367) println("Transforming ${array[absi]} to ${transform(array[absi])}")
+                    array[absi] = transform(array[absi])
                 }
             }
-            jobList.add(job)
         }
-        jobList.joinAll()
         return this
     }
 
     /** from flat ZYX array creates YX.Z array to perform some operation on this z-rows. Then transforms it back to ZYX and writes to array
      * In lambda first parameter is z-ShortArray, second is yxi value (in Indices2 of width and height) */
+    @Deprecated("It's not efficient enough. Use when you don't know target size", ReplaceWith("doSomethingOnYXArrayOfZArrays(targetSize, lambda)"))
     suspend fun doSomethingOnYXArrayOfZArrays(doOnZArr: (ShortArray, Int) -> ShortArray): ArrayOps {
 
         // Z.Y.X
@@ -201,6 +198,7 @@ class ArrayOps(
             }
         }.awaitAll().flattenListToShortArray()
         size = newSize
+        center = MySize3(newSize.width/2, newSize.height/2, newSize.depth/2)
         array = newShArr
         return this
     }
@@ -228,6 +226,7 @@ class ArrayOps(
             }
         }
         size = newSize
+        center = MySize3(newSize.width/2, newSize.height/2, newSize.depth/2)
         array = newArray
         return this
     }
@@ -268,27 +267,46 @@ class ArrayOps(
         return array[start, endInclusive]
     }
 
+    suspend fun getFlatYXforMergedZ(depthZ: Int, merge: (ShortArray) -> Short = { it[0] }): ShortArray {
+        val indi2 = Indices2(MySize2(size.width,size.height)) // target image: y vertical, x horizontal,  z depth
+        return createShortArrayWithCoroutines(indi2.size.total) { xyi ->
+            val values =  ShortArray(size.depth - depthZ) { zi ->
+                array[absoluteIndexOf3(indi2.absoluteToX(xyi), indi2.absoluteToY(xyi), depthZ+zi)]
+            }
+            merge(values)
+        }
+    }
+
     /** ShortArray of flattened YZ for X index */   // xyz
     fun getFlatYZforX(depthX: Int): ShortArray {
-        val sizeOf2 = size.height * size.depth
-        val absoluteIndexOf1 = {
-            yzi: Int ->
-            val z = yzi % size.depth
-            val y = yzi / size.depth
-            absoluteIndexOf3(depthX, y, z)
+        val indi2 = Indices2(MySize2(size.depth, size.height)) // target image: y vertical, z horizontal,  x depth
+        return ShortArray(indi2.size.total) { yzi -> array[absoluteIndexOf3(depthX, indi2.absoluteToY(yzi), indi2.absoluteToX(yzi))]}
+    }
+
+    suspend fun getFlatYZforMergedX(depthX: Int, merge: (ShortArray) -> Short = { it[0] }): ShortArray {
+        val indi2 = Indices2(MySize2(size.depth,size.height)) // target image: y vertical, z horizontal,  x depth
+        return createShortArrayWithCoroutines(indi2.size.total) { yzi ->
+            val values =  ShortArray(size.width - depthX) { xi ->
+                array[absoluteIndexOf3(depthX+xi, indi2.absoluteToY(yzi), indi2.absoluteToX(yzi))]
+            }
+            merge(values)
         }
-        return ShortArray(sizeOf2) { yzi -> array[absoluteIndexOf1(yzi)]}
     }
 
     /** ShortArray of flattened XZ for Y index */   // yxz
     fun getFlatXZforY(depthY: Int): ShortArray {
-        val absoluteIndexOf1 = {xzi: Int ->
-            val z = xzi % size.depth
-            val x = xzi / size.depth
-            absoluteIndexOf3(x, depthY, z)
+        val indi2 = Indices2(MySize2(size.depth, size.width)) // target image: x vertical, z horizontal,  y depth
+        return ShortArray(indi2.size.total) { xzi -> array[absoluteIndexOf3(indi2.absoluteToY(xzi), depthY, indi2.absoluteToX(xzi))] }
+    }
+
+    suspend fun getFlatXZforMergedY(depthY: Int, merge: (ShortArray) -> Short = { it[0] }): ShortArray {
+        val indi2 = Indices2(MySize2(size.depth, size.width)) // target image: x vertical, z horizontal,  y depth
+        return createShortArrayWithCoroutines(indi2.size.total) { xzi ->
+            val values =  ShortArray(size.height - depthY) { yi ->
+                array[absoluteIndexOf3(indi2.absoluteToY(xzi), depthY+yi, indi2.absoluteToX(xzi))]
+            }
+            merge(values)
         }
-        val sizeOf2 = size.width * size.depth
-        return ShortArray(sizeOf2) { xzi -> array[absoluteIndexOf1(xzi)]}
     }
 
     private fun ensureInBounds3D(vec: Float4): Float3 {
@@ -307,6 +325,7 @@ class ArrayOps(
     }
 
     /** Performs Trilinear interpolation */
+    @Deprecated("It's not efficient enough", ReplaceWith("manualValueAtIndex3D"))
     private fun valueAtIndex3D(vec: Float4): Short {
         val ensVec = ensureInBounds3D(vec)
         val xIndices = intArrayOf( floor(ensVec.x).toInt(), ceil(ensVec.x).toInt() )
@@ -347,7 +366,7 @@ class ArrayOps(
         val dy = ensY - yInd0
         val dz = ensZ - zInd0
 
-        // I know it's stupid writing trilinear interpolation without arrays, byt this performs much better
+        // I know it's stupid writing trilinear interpolation without arrays, but this performs much better
         // Even ShortArrays and intArrays were too much!
         return InterpolationSA.manualLinearInterpolationOf2( // 8 + 4 + 2 operations
             InterpolationSA.manualLinearInterpolationOf2(
@@ -382,20 +401,21 @@ class ArrayOps(
 
     /** Combined previously 2 steps - creating indices array, getting value */
     private fun valueAtTransformedPosition(startZ: Int, x: Int, y: Int, rotMX: Mat4, rotMY: Mat4): ShortArray {
+        val startZFl = startZ.toFloat()
         val fl4 = Float4(       // translate, center -> 0,0,0
-            x.toFloat() - (size.width / 2f), // incorporated translation to the center
-            y.toFloat() - (size.height / 2f),
-            (startZ).toFloat() - (size.depth / 2f),
+            x.toFloat() - center.width, // incorporated translation to the center
+            y.toFloat() - center.height,
+            startZFl - center.depth,
             1f
         )
         return ShortArray(size.depth - startZ) { i ->
-            fl4.z = (startZ + i).toFloat() - (size.depth / 2f) // update z (and translate to center)
+            fl4.z = (startZFl + i) - center.depth // update z (and translate to center)
             val step1 = rotMX * fl4     // rotate around X
             val step2 = rotMY * step1   // rotate around Y
             val index = Float4(
-                step2.x + (size.width / 2f), // incorporated translation from the center
-                step2.y + (size.height / 2f),
-                step2.z + (size.depth / 2f),
+                step2.x + center.width, // incorporated translation from the center
+                step2.y + center.height,
+                step2.z + center.depth,
                 1f
             )                           // translate, 0,0,0 -> center
             manualValueAtIndex3D(index)   // return short
