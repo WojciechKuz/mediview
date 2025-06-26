@@ -2,6 +2,9 @@ import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsHoveredAsState
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -81,16 +84,25 @@ fun threeImagesBlock(imgsize: Int, uiImageMap: MutableMap<ExtView, ImageBitmap?>
 @Composable
 @Preview
 fun threeSlidersBlock(imgsize: Int, manager: UIManager) {
-    Box { ui3Sliders(imgsize, manager::viewSliderChange) }
+    Box { ui3Sliders(imgsize, manager) }
 }
 /** Okienko z suwakami. dodaje 3 suwaki, musi być umieszczone w layoucie.
  * @param sliderValChange float jest od 0 do 256, a View: Red-SLICE, Green-TOP, Blue-SIDE */
 @Composable
 @Preview
-private fun ui3Sliders(imgsize: Int, sliderValChange: (Float, ExtView) -> Unit) {
+private fun ui3Sliders(imgsize: Int, manager: UIManager) {
+    val sliderValChange = manager::viewSliderChange
     var redSliderPosition by remember { mutableStateOf(Config.sliderRange.startVal) }
     var greenSliderPosition by remember { mutableStateOf(Config.sliderRange.startVal) }
     var blueSliderPosition by remember { mutableStateOf(Config.sliderRange.startVal) }
+    fun lambdakid(view: ExtView, setter: (Float) -> Unit) {
+        if(manager.sliderSetters[view] == null) manager.sliderSetters[view] = setter
+    }
+    lambdakid(ExtView.SLICE) { redSliderPosition = it }
+    lambdakid(ExtView.TOP) { greenSliderPosition = it }
+    lambdakid(ExtView.SIDE) { blueSliderPosition = it }
+    //val interactionSource = remember { MutableInteractionSource() }
+    //val zzz by interactionSource.collectIsHoveredAsState()
     val modifier = Modifier.width(imgsize.dp)
     Row {
         Column {
@@ -135,7 +147,8 @@ private fun ui3Sliders(imgsize: Int, sliderValChange: (Float, ExtView) -> Unit) 
                 },
                 colors = getSliderDefaultColors(Color.Blue),
                 steps = Config.sliderSteps,
-                modifier = modifier
+                modifier = modifier,
+                interactionSource = remember { MutableInteractionSource() }
             )
         }
     }

@@ -11,11 +11,11 @@ import transform3d.ExtView
 import transform3d.Mode
 import transform3d.MyColor
 import transform3d.MySize3
+import transform3d.View
 import transform3d.getComposeImageAngled
 import transform3d.tagNotFoundErr
 import transform3d.toExtView
 import transform3d.toView
-import kotlin.math.PI
 import kotlin.math.round
 import kotlin.system.measureTimeMillis
 
@@ -26,6 +26,8 @@ class UIManager(val uiImageMap: MutableMap<ExtView, ImageBitmap?>) {
     private lateinit var size: MySize3
     private val freeQueue = LaunchQueue()
     private val allQueue = LaunchQueue()
+    /** passes denormalized value to be set. */
+    val sliderSetters = mutableMapOf<ExtView, (Float) -> Unit>()
 
     var mode = Mode.EFFICIENT_NONE
     var displaying = Displaying.THREE
@@ -143,12 +145,10 @@ class UIManager(val uiImageMap: MutableMap<ExtView, ImageBitmap?>) {
 
         val normDepth = Config.sliderRange.normalizeValue(depth256)
         depthValues[view] = normDepth
-        //println("$view slider change, $depth256. SliceD $depthSlice, SideD $depthSide, TopD $depthTop")
 
         // skip calling getImage with same value as before
         val imgDepth = (normDepth * maxDepth(view)).toInt()
         if (depthSliderVals[view] == imgDepth) {
-            //println("Same $imgDepth value as before")
             return
         }
         depthSliderVals[view] = imgDepth
@@ -175,29 +175,40 @@ class UIManager(val uiImageMap: MutableMap<ExtView, ImageBitmap?>) {
         assignNewImage(view)
     }
 
-    /** image tapped */ // TODO tap view
+    /** image tapped. parameters absx and absy should be normalized. */
     fun viewTapChange(absx: Float, absy: Float, view: ExtView) {
         if(!::imageAndData.isInitialized || !::size.isInitialized) { return } // yes, slider may be moved before loadDicom()
 
-        if(true) { println("viewTapChange not implemented"); return }
+        //val viewSize = viewOrientedSize(view.toView(), imageAndData.imageArray.size)
+        //val viewWidth: Int = round(viewSize.width * absx).toInt()
+        //val viewHeight: Int = round(viewSize.height * absy).toInt()
 
-        val normDepth = 0f  //Config.sliderRange.normalizeValue(depth256)
-        //depthValues[view] = normDepth
-        //println("$view slider change, $depth256. SliceD $depthSlice, SideD $depthSide, TopD $depthTop")
+        // width of this view as depth of view1, height of this view as depth of view2
+        val view1 = widthOfThisViewIsDepthOfView(view.toView()).toExtView()
+        val view2 = heightOfThisViewIsDepthOfView(view.toView()).toExtView()
+
+        depthValues[view1] = absx
+        depthValues[view2] = absy
 
         // skip calling getImage with same value as before
-        val imgDepth = (normDepth * maxDepth(view)).toInt()
-        if (depthSliderVals[view] == imgDepth) {
-            //println("Same $imgDepth value as before")
+        val imgDepth1 = (absx * maxDepth(view1)).toInt()
+        val imgDepth2 = (absy * maxDepth(view2)).toInt()
+        if (depthSliderVals[view1] == imgDepth1) {
             return
         }
-        depthSliderVals[view] = imgDepth
-        // up to this point all operations in this function are light, thus not in CoroutineScope
-
-        //assignNewImage(view)
-        allQueue.startJob(true) {
-            valuesChanged().invokeOnCompletion { allQueue.finishJob() }
+        if (depthSliderVals[view2] == imgDepth2) {
+            return
         }
+        // set slider when depths changed via tap
+        depthSliderVals[view1] = imgDepth1
+        depthSliderVals[view2] = imgDepth2
+
+        // update real sliders
+        sliderSetters[view1]?.let { it(Config.sliderRange.denormalize(absx)) }
+        sliderSetters[view2]?.let { it(Config.sliderRange.denormalize(absy)) }
+
+        assignNewImage(view1)
+        assignNewImage(view2)
     }
 
     /** When value that affects image changes, trigger redraw.
@@ -224,6 +235,23 @@ class UIManager(val uiImageMap: MutableMap<ExtView, ImageBitmap?>) {
         ExtView.TOP -> size.height
         ExtView.FREE -> size.depth
     }
+//    /** @param std size where x width, y height, z depth */
+//    private fun viewOrientedSize(view: View, std: MySize3): MySize3 = when(view) {
+//        View.SLICE -> std // x width, y height, z depth
+//        View.SIDE -> MySize3(std.depth, std.height, std.width) // z width, y height, x depth
+//        View.TOP -> MySize3(std.depth, std.width, std.height) // z width, x height, y depth
+//    }
+//    private fun otherViews(view: View) = View.entries.filter { it != view }
+    private fun widthOfThisViewIsDepthOfView(view: View): View = when(view) {
+        View.SLICE -> View.SIDE
+        View.SIDE -> View.SLICE
+        View.TOP -> View.SLICE
+    }
+    private fun heightOfThisViewIsDepthOfView(view: View): View = when(view) {
+        View.SLICE -> View.TOP
+        View.SIDE -> View.TOP
+        View.TOP -> View.SIDE
+    }
 
     // Normalized values
     val depthValues: MutableMap<ExtView, Float> = mutableMapOf(
@@ -245,7 +273,6 @@ class UIManager(val uiImageMap: MutableMap<ExtView, ImageBitmap?>) {
             CoroutineScope(Dispatchers.Default).launch {
                 // assign, when getImage completes, without blocking
                 uiImageMap[view] = getImage(view).also { img ->
-                    // .let{} when not null and no other process writes
                     if (img == null) {
                         println("Failed to get image for $view")
                     } else {

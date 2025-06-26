@@ -26,4 +26,5 @@ class MySliderRange(val start: Float, val end: Float) {
     val maxStartVal = end - 1
     /** To 0.0-1.0 range */
     fun normalizeValue(value: Float) = (value - start) / (end - start) // do not change
+    fun denormalize(normValue: Float) = normValue * (end - start) + start
 }

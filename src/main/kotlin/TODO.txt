@@ -39,7 +39,6 @@ Rzeczy pozostałe do uwzględnienia:
 
 
 
-TODO:
 
 --- Zadanie 2:
 
@@ -48,7 +47,9 @@ TODO:
 - DONE zrównoleglone liczenie projekcji
 - DONE obrót wokół środka
 - DONE regulacja zakresu
-- podświetlenie first hit
+- DONE podświetlenie first hit
+- DONE klik -> przestaw pozostałe 2 widoki. Opcjonalnie w trybie EFFICIENT_NONE, przy przeciąganiu na bieżąco
+
 - tryby:
     DONE - none - jak w zad 1
     DONE - średnia
@@ -56,9 +57,8 @@ TODO:
     DONE - first hit - pierwsza wartość większa od: wartość wybrana suwakiem.
     FIXME Gdy piksel spełnia wymóg FIRST_HIT w trybie none, to kolor czerwony
 
-- wskaźnik wartości onHover
-- klik -> przestaw pozostałe 2 widoki. Opcjonalnie w trybie EFFICIENT_NONE, przy przeciąganiu na bieżąco
-
+TODO:
+- tekst z podanymi kątami
 - animacja - obrót o wybrany kąt i liczba klatek
     - na wszystkich 3 przekrojach?
     - wyświetl animację
@@ -72,4 +72,5 @@ TODO:
 
 Tylko eksport animacji
 
-Dlaczego środkowy widok - top jest wolniejszy od side? (poza trybem efficient none)
+- wskaźnik wartości onHover
+- Dlaczego środkowy widok - top jest wolniejszy od side? (poza trybem efficient none)
