@@ -48,7 +48,7 @@ class UIManager(val uiImageMap: MutableMap<ExtView, ImageBitmap?>) {
 
     private var firstHitValue: Short = 0 // set real value in loadDicom()
     var adjustedValueRange = 0..1 // set real value in loadDicom()
-        private set;
+        private set
     private fun getImageValueRange(): IntRange {
         val minDicomVal = ((imageAndData.dataMap[tagAsUInt("[0028 0106]")]?: throw tagNotFoundErr("[0028 0106]")).value as UInt).toInt()
         val maxDicomVal = ((imageAndData.dataMap[tagAsUInt("[0028 0107]")]?: throw tagNotFoundErr("[0028 0107]")).value as UInt).toInt()
@@ -180,7 +180,7 @@ class UIManager(val uiImageMap: MutableMap<ExtView, ImageBitmap?>) {
         val normAngle = Config.sliderRange.normalizeValue(angleVal256) * 2f - 1f // [0:1] -> [-1:1]
         angleValues[angle] = normAngle
 
-        val imgAngle = (normAngle * 180.0f).toInt(); // [-180:180]
+        val imgAngle = (normAngle * 180.0f).toInt() // [-180:180]
         if(angleSliderVals[angle] == imgAngle) {
             return
         }
@@ -195,10 +195,6 @@ class UIManager(val uiImageMap: MutableMap<ExtView, ImageBitmap?>) {
     /** image tapped. parameters absx and absy should be normalized. */
     fun viewTapChange(absx: Float, absy: Float, view: ExtView) {
         if(!::imageAndData.isInitialized || !::size.isInitialized) { return } // yes, slider may be moved before loadDicom()
-
-        //val viewSize = viewOrientedSize(view.toView(), imageAndData.imageArray.size)
-        //val viewWidth: Int = round(viewSize.width * absx).toInt()
-        //val viewHeight: Int = round(viewSize.height * absy).toInt()
 
         // width of this view as depth of view1, height of this view as depth of view2
         val view1 = widthOfThisViewIsDepthOfView(view.toView()).toExtView()
@@ -253,13 +249,6 @@ class UIManager(val uiImageMap: MutableMap<ExtView, ImageBitmap?>) {
         ExtView.TOP -> size.height
         ExtView.FREE -> size.depth
     }
-//    /** @param std size where x width, y height, z depth */
-//    private fun viewOrientedSize(view: View, std: MySize3): MySize3 = when(view) {
-//        View.SLICE -> std // x width, y height, z depth
-//        View.SIDE -> MySize3(std.depth, std.height, std.width) // z width, y height, x depth
-//        View.TOP -> MySize3(std.depth, std.width, std.height) // z width, x height, y depth
-//    }
-//    private fun otherViews(view: View) = View.entries.filter { it != view }
     private fun widthOfThisViewIsDepthOfView(view: View): View = when(view) {
         View.SLICE -> View.SIDE
         View.SIDE -> View.SLICE
@@ -322,7 +311,7 @@ class UIManager(val uiImageMap: MutableMap<ExtView, ImageBitmap?>) {
     // Getting image
     /** Asynchronously call getImage(view) and put results in uiImageMap. Works for ONE image */
     private fun assignNewImage(view: ExtView) {
-        freeQueue.startJob(view == ExtView.FREE) {
+        freeQueue.startJob(/*view == ExtView.FREE*/ true) {
             CoroutineScope(Dispatchers.Default).launch {
                 // assign, when getImage completes, without blocking
                 uiImageMap[view] = getImage(view).also { img ->

@@ -70,11 +70,9 @@ fun redYellowGreenTransformPixelsToRGBA(source: ShortArray, fromRange: IntRange)
                 Config.redPixel[bi%4]
             }
             bi%4 == 0 -> {
-                //if (ryg < 18.toShort()) byte0
                 if (ryg > 255) maxByte else ryg.toByte()
             } // Red
             bi%4 == 1 -> {
-                //if (ryg < 18.toShort()) byte0
                 if (ryg < 256) maxByte else (511 - ryg).toByte()
             } // Green
             bi%4 == 2 -> byte0 // Blue
@@ -229,7 +227,7 @@ suspend fun getComposeImage(imgAndData: ImageAndData<ArrayOps>, view: View, dept
         MyColor.RYGSCALE -> redYellowGreenTransformPixelsToRGBA(shArr, valRange)
     }
 
-    val imageBitmap = rawByteArrayToImageBitmap(            // TODO test code changes
+    val imageBitmap = rawByteArrayToImageBitmap(
         bytes,
         shArrHByW.second,
         shArrHByW.first,

@@ -3,8 +3,6 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsHoveredAsState
-import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -86,8 +84,7 @@ fun threeImagesBlock(imgsize: Int, uiImageMap: MutableMap<ExtView, ImageBitmap?>
 fun threeSlidersBlock(imgsize: Int, manager: UIManager) {
     Box { ui3Sliders(imgsize, manager) }
 }
-/** Okienko z suwakami. dodaje 3 suwaki, musi być umieszczone w layoucie.
- * @param sliderValChange float jest od 0 do 256, a View: Red-SLICE, Green-TOP, Blue-SIDE */
+/** Okienko z suwakami. dodaje 3 suwaki, musi być umieszczone w layoucie. */
 @Composable
 @Preview
 private fun ui3Sliders(imgsize: Int, manager: UIManager) {
@@ -113,7 +110,6 @@ private fun ui3Sliders(imgsize: Int, manager: UIManager) {
                 onValueChange = {
                     redSliderPosition = it
                     sliderValChange(it, ExtView.SLICE)
-                    //println("Red $redSliderPosition")
                 },
                 colors = getSliderDefaultColors(Color.Red),
                 steps = Config.sliderSteps,
@@ -128,7 +124,6 @@ private fun ui3Sliders(imgsize: Int, manager: UIManager) {
                 onValueChange = {
                     greenSliderPosition = it
                     sliderValChange(it, ExtView.TOP)
-                    //println("Green $greenSliderPosition")
                 },
                 colors = getSliderDefaultColors(Color.Green),
                 steps = Config.sliderSteps,
@@ -143,7 +138,6 @@ private fun ui3Sliders(imgsize: Int, manager: UIManager) {
                 onValueChange = {
                     blueSliderPosition = it
                     sliderValChange(it, ExtView.SIDE)
-                    //println("Blue $blueSliderPosition")
                 },
                 colors = getSliderDefaultColors(Color.Blue),
                 steps = Config.sliderSteps,
