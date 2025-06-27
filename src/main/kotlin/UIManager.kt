@@ -27,7 +27,7 @@ class UIManager(val uiImageMap: MutableMap<ExtView, ImageBitmap?>) {
     private val freeQueue = LaunchQueue()
     private val allQueue = LaunchQueue()
     /** passes denormalized value to be set. */
-    val sliderSetters = mutableMapOf<ExtView, (Float) -> Unit>()
+    val sliderSetters = mutableMapOf<ExtView, UISetter<Float>>()
 
     var mode = Mode.EFFICIENT_NONE
     var displaying = Displaying.THREE
@@ -47,7 +47,8 @@ class UIManager(val uiImageMap: MutableMap<ExtView, ImageBitmap?>) {
     )
 
     private var firstHitValue: Short = 0 // set real value in loadDicom()
-    private var adjustedValueRange = 0..1 // set real value in loadDicom()
+    var adjustedValueRange = 0..1 // set real value in loadDicom()
+        private set;
     private fun getImageValueRange(): IntRange {
         val minDicomVal = ((imageAndData.dataMap[tagAsUInt("[0028 0106]")]?: throw tagNotFoundErr("[0028 0106]")).value as UInt).toInt()
         val maxDicomVal = ((imageAndData.dataMap[tagAsUInt("[0028 0107]")]?: throw tagNotFoundErr("[0028 0107]")).value as UInt).toInt()
@@ -71,8 +72,10 @@ class UIManager(val uiImageMap: MutableMap<ExtView, ImageBitmap?>) {
         val diff = imgValRange.endInclusive - imgValRange.start
         val normLow = Config.sliderRange.normalizeValue(lowest256)
 
+        val oldLowerLimit = adjustedValueRange.start
         val oldUpperLimit = adjustedValueRange.endInclusive
         val lowerLimit = round(imgValRange.start + diff * normLow).toInt()
+        if (oldLowerLimit == lowerLimit) return
         if(lowerLimit < oldUpperLimit) {
             adjustedValueRange = lowerLimit..oldUpperLimit
         }
@@ -80,6 +83,7 @@ class UIManager(val uiImageMap: MutableMap<ExtView, ImageBitmap?>) {
         allQueue.startJob(true) {
             valuesChanged().invokeOnCompletion { allQueue.finishJob() }
         }
+        minValUpdater?.set(lowerLimit)
     }
     /** set upper end of value range */
     fun setHighestValue(highest256: Float) {
@@ -90,7 +94,9 @@ class UIManager(val uiImageMap: MutableMap<ExtView, ImageBitmap?>) {
         val normHigh = Config.sliderRange.normalizeValue(highest256)
 
         val oldLowerLimit = adjustedValueRange.start
+        val oldUpperLimit = adjustedValueRange.endInclusive
         val upperLimit = round(imgValRange.start + diff * normHigh).toInt()
+        if(oldUpperLimit == upperLimit) return
         if(upperLimit > oldLowerLimit) {
             adjustedValueRange = oldLowerLimit..upperLimit
         }
@@ -98,6 +104,7 @@ class UIManager(val uiImageMap: MutableMap<ExtView, ImageBitmap?>) {
         allQueue.startJob(true) {
             valuesChanged().invokeOnCompletion { allQueue.finishJob() }
         }
+        maxValUpdater?.set(upperLimit)
     }
     /** set first hit value. Only applicable in first hit mode. And None mode? */
     fun setFirstHitValue(fHitVal256: Float) {
@@ -106,11 +113,14 @@ class UIManager(val uiImageMap: MutableMap<ExtView, ImageBitmap?>) {
         val normSlider = Config.sliderRange.normalizeValue(fHitVal256)
         val imgValRange = getImageValueRange()
         val diff = imgValRange.endInclusive - imgValRange.start
-        firstHitValue = round(imgValRange.start + diff * normSlider).toInt().toShort()
+        val newFirstHitVal = round(imgValRange.start + diff * normSlider).toInt().toShort()
+        if(newFirstHitVal == firstHitValue) return
+        firstHitValue = newFirstHitVal
 
         allQueue.startJob(true) {
             valuesChanged().invokeOnCompletion { allQueue.finishJob() }
         }
+        firstHitUpdater?.set(firstHitValue.toInt())
     }
 
 
@@ -132,6 +142,11 @@ class UIManager(val uiImageMap: MutableMap<ExtView, ImageBitmap?>) {
         firstHitValue = adjustedValueRange.start.toShort()
 
         redrawVisible() // no need to queue
+
+        textUpdater()
+        minValUpdater?.set(adjustedValueRange.start)
+        maxValUpdater?.set(adjustedValueRange.endInclusive)
+        firstHitUpdater?.set(firstHitValue.toInt())
 
         println()
         //printInfoOnce()
@@ -155,6 +170,7 @@ class UIManager(val uiImageMap: MutableMap<ExtView, ImageBitmap?>) {
         // up to this point all operations in this function are light, thus not in CoroutineScope
 
         assignNewImage(view)
+        textUpdater()
     }
 
     /** angle slider in UI moved */
@@ -173,6 +189,7 @@ class UIManager(val uiImageMap: MutableMap<ExtView, ImageBitmap?>) {
 
         // discards previous operations if they didn't complete
         assignNewImage(view)
+        textUpdater()
     }
 
     /** image tapped. parameters absx and absy should be normalized. */
@@ -204,11 +221,12 @@ class UIManager(val uiImageMap: MutableMap<ExtView, ImageBitmap?>) {
         depthSliderVals[view2] = imgDepth2
 
         // update real sliders
-        sliderSetters[view1]?.let { it(Config.sliderRange.denormalize(absx)) }
-        sliderSetters[view2]?.let { it(Config.sliderRange.denormalize(absy)) }
+        sliderSetters[view1]?.set( Config.sliderRange.denormalize(absx) )
+        sliderSetters[view2]?.set( Config.sliderRange.denormalize(absy) )
 
         assignNewImage(view1)
         assignNewImage(view2)
+        textUpdater()
     }
 
     /** When value that affects image changes, trigger redraw.
@@ -264,6 +282,41 @@ class UIManager(val uiImageMap: MutableMap<ExtView, ImageBitmap?>) {
         Angle.XZAngle to 0.0f,
         Angle.YZAngle to 0.0f,
     )
+
+    val angleSetters = mutableMapOf<Angle, UISetter<Float>>()
+    /** for showing in UI. */
+    fun scaleAngleSlider(sliderVal256: Float): Float {
+        if(!::imageAndData.isInitialized || !::size.isInitialized) { return 0f }
+        val normAngle = Config.sliderRange.normalizeValue(sliderVal256) * 2f - 1f // [0:1] -> [-1:1]
+        return normAngle * 180f
+    }
+    fun scaleDepthSlider(view: ExtView, sliderVal256: Float): Int {
+        if(!::imageAndData.isInitialized || !::size.isInitialized) { return Config.sliderRange.startVal.toInt() }
+        val normDepth = Config.sliderRange.normalizeValue(sliderVal256)
+        return (normDepth * maxDepth(view)).toInt()
+    }
+    private var textSetter: UISetter<String>? = null
+    fun setTextSetter(setter: UISetter<String>) { textSetter = setter }
+
+    fun textUpdater() {
+        if(!::imageAndData.isInitialized || !::size.isInitialized) return
+        val mappedDepths = depthValues.keys.associateWith { key -> (depthValues[key]!! * maxDepth(key)).toInt() }
+        val depthsText = "x: ${mappedDepths[ExtView.SIDE]}, y: ${mappedDepths[ExtView.TOP]}, z: ${mappedDepths[ExtView.SLICE]}"
+        val xzAngle = angleValues[Angle.XZAngle]!! * 90f
+        val yzAngle = angleValues[Angle.YZAngle]!! * 90f
+        val angleText = "horizontal: ${"%.2f".format(xzAngle)}°, vertical: ${"%.2f".format(yzAngle)}°"
+        when(displaying) {
+            Displaying.THREE -> textSetter?.set(depthsText)
+            Displaying.PROJECTION -> textSetter?.set("depth ${mappedDepths[ExtView.FREE]}; angles: $angleText")
+            Displaying.ANIMATION -> textSetter?.set("depth ${mappedDepths[ExtView.FREE]}; angles: $angleText")
+        }
+    }
+    private var minValUpdater: UISetter<Int>? = null
+    private var maxValUpdater: UISetter<Int>? = null
+    private var firstHitUpdater: UISetter<Int>? = null
+    fun setMinValUpdater(setter: UISetter<Int>) { minValUpdater = setter }
+    fun setMaxValUpdater(setter: UISetter<Int>) { maxValUpdater = setter }
+    fun setFirstHitUpdater(setter: UISetter<Int>) { firstHitUpdater = setter }
 
 
     // Getting image

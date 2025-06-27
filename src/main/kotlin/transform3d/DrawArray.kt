@@ -200,7 +200,10 @@ suspend fun getComposeImage(imgAndData: ImageAndData<ArrayOps>, view: View, dept
         return null
     }
     val imgArr = imgAndData.imageArray
-    val depthIndex = if(mode == Mode.NONE) 0 else round(depth * viewDepth(view, imgArr.size)).toInt() // NONE needs to start at 0
+    /** real depth index */
+    val depthIndex = round(depth * viewDepth(view, imgArr.size)).toInt()
+    /** merge starting at this index */
+    val mergeFromIndex = if(mode == Mode.NONE) 0 else depthIndex // NONE needs to start at 0
     val shArr = if(mode == Mode.EFFICIENT_NONE) {
         when(view) {
             View.SLICE -> imgArr.getFlatYXforZ(depthIndex)
@@ -210,9 +213,9 @@ suspend fun getComposeImage(imgAndData: ImageAndData<ArrayOps>, view: View, dept
     } else {
         val merge = modeMergeStrategy(mode, firstHitVal, depthIndex)
         when(view) {
-            View.SLICE -> imgArr.getFlatYXforMergedZ(depthIndex, merge)
-            View.SIDE -> imgArr.getFlatYZforMergedX(depthIndex, merge)
-            View.TOP -> imgArr.getFlatXZforMergedY(depthIndex, merge)
+            View.SLICE -> imgArr.getFlatYXforMergedZ(mergeFromIndex, merge)
+            View.SIDE -> imgArr.getFlatYZforMergedX(mergeFromIndex, merge)
+            View.TOP -> imgArr.getFlatXZforMergedY(mergeFromIndex, merge)
         }
     }
 
@@ -250,7 +253,9 @@ suspend fun getComposeImageAngled(imgAndData: ImageAndData<ArrayOps>, view: ExtV
         return null
     }
     val imgArr = imgAndData.imageArray
-    val depthIndex = round(depth * imgArr.size.depth).toInt() //.also { println("Get image at index $it") }
+    val depthIndex = round(depth * imgArr.size.depth).toInt()
+    /** merge starting at this index */
+    val mergeFromIndex = if(mode == Mode.NONE) 0 else depthIndex // NONE needs to start at 0
     val merge = modeMergeStrategy(mode, firstHitVal, depthIndex)
     val ensureAngleInRange = { angle: Double ->
         if(angle > 180.0) angle - 360.0 else angle
@@ -262,7 +267,7 @@ suspend fun getComposeImageAngled(imgAndData: ImageAndData<ArrayOps>, view: ExtV
         ExtView.TOP -> ensureAngleInRange(yzAngle+90.0) to ensureAngleInRange(xzAngle+90.0)
         ExtView.FREE -> yzAngle to xzAngle
     }
-    val shArr = imgArr.getMergedSlicesAtAnyOrientation(depthIndex, adjustedAngles.first, adjustedAngles.second, merge)
+    val shArr = imgArr.getMergedSlicesAtAnyOrientation(mergeFromIndex, adjustedAngles.first, adjustedAngles.second, merge)
     /** Size. first is height, second is width */
     val shArrSizeHByW = when(view) {
         ExtView.SLICE -> imgArr.size.height to imgArr.size.width // YX for Z

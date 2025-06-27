@@ -55,10 +55,10 @@ Rzeczy pozostałe do uwzględnienia:
     DONE - średnia
     DONE - max
     DONE - first hit - pierwsza wartość większa od: wartość wybrana suwakiem.
-    FIXME Gdy piksel spełnia wymóg FIRST_HIT w trybie none, to kolor czerwony
+    FIXDONE Gdy piksel spełnia wymóg FIRST_HIT w trybie none, to kolor czerwony
+- DONE tekst z podanymi kątami
 
 TODO:
-- tekst z podanymi kątami
 - animacja - obrót o wybrany kąt i liczba klatek
     - na wszystkich 3 przekrojach?
     - wyświetl animację

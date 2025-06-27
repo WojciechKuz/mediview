@@ -95,7 +95,7 @@ private fun ui3Sliders(imgsize: Int, manager: UIManager) {
     var redSliderPosition by remember { mutableStateOf(Config.sliderRange.startVal) }
     var greenSliderPosition by remember { mutableStateOf(Config.sliderRange.startVal) }
     var blueSliderPosition by remember { mutableStateOf(Config.sliderRange.startVal) }
-    fun lambdakid(view: ExtView, setter: (Float) -> Unit) {
+    fun lambdakid(view: ExtView, setter: UISetter<Float>) {
         if(manager.sliderSetters[view] == null) manager.sliderSetters[view] = setter
     }
     lambdakid(ExtView.SLICE) { redSliderPosition = it }
@@ -106,7 +106,7 @@ private fun ui3Sliders(imgsize: Int, manager: UIManager) {
     val modifier = Modifier.width(imgsize.dp)
     Row {
         Column {
-            Text("slice:")
+            Text("slice: ${manager.scaleDepthSlider(ExtView.SLICE, redSliderPosition)}")
             Slider(
                 value = redSliderPosition,
                 valueRange = Config.sliderRange.range,
@@ -121,7 +121,7 @@ private fun ui3Sliders(imgsize: Int, manager: UIManager) {
             )
         }
         Column {
-            Text("top:")
+            Text("top: ${manager.scaleDepthSlider(ExtView.TOP, greenSliderPosition)}")
             Slider(
                 value = greenSliderPosition,
                 valueRange = Config.sliderRange.range,
@@ -136,7 +136,7 @@ private fun ui3Sliders(imgsize: Int, manager: UIManager) {
             )
         }
         Column {
-            Text("side:")
+            Text("side: ${manager.scaleDepthSlider(ExtView.SIDE, blueSliderPosition)}")
             Slider(
                 value = blueSliderPosition,
                 valueRange = Config.sliderRange.range,

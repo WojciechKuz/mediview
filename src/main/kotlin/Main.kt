@@ -107,6 +107,14 @@ fun App() {
                 ) {
                     Text(colorText)
                 }
+                var valuesText by remember { mutableStateOf("") }
+                manager.setTextSetter { valuesText = it }
+                Text(valuesText, modifier = Modifier.padding(end = 8.dp, top = 1.dp))
+
+                //var someValue by remember { mutableStateOf(0) }
+//            if(displ == Displaying.PROJECTION || displ == Displaying.ANIMATION) {
+//                Text("Angles: ${manager.getAngle(5f)}", modifier = Modifier.padding(end = 8.dp))
+//            }
             }
 
             when(displ) {
@@ -134,14 +142,20 @@ fun alwaysSliders(manager: UIManager, mode: Mode) {
     val imgsize = Config.displayImageSize
     Box {
         Row {
-            colorfulSlider(imgsize, "min value", getSliderDefaultColors(Color.DarkGray), startVal = Config.sliderRange.minStartVal) {
+            var minValDescr by remember { mutableStateOf("min value")}
+            manager.setMinValUpdater { minValDescr = "min value: $it" }
+            colorfulSlider(imgsize, minValDescr, getSliderDefaultColors(Color.DarkGray), startVal = Config.sliderRange.minStartVal) {
                 manager.setLowestValue(it)
             }
-            colorfulSlider(imgsize, "max value", getSliderDefaultColors(Color.DarkGray), startVal = Config.sliderRange.maxStartVal) {
+            var maxValDescr by remember { mutableStateOf("max value")}
+            manager.setMaxValUpdater { maxValDescr = "max value: $it" }
+            colorfulSlider(imgsize, maxValDescr, getSliderDefaultColors(Color.DarkGray), startVal = Config.sliderRange.maxStartVal) {
                 manager.setHighestValue(it)
             }
+            var firstHitDescr by remember { mutableStateOf("first hit min value")}
+            manager.setFirstHitUpdater { firstHitDescr = "first hit min value: $it" }
             if(mode == Mode.FIRST_HIT || mode == Mode.NONE)
-                colorfulSlider(imgsize, "first hit min value", getSliderDefaultColors(Color.DarkGray), startVal = Config.sliderRange.minStartVal) {
+                colorfulSlider(imgsize, firstHitDescr, getSliderDefaultColors(Color.DarkGray), startVal = Config.sliderRange.minStartVal) {
                     manager.setFirstHitValue(it)
                 }
         }
