@@ -15,6 +15,7 @@ repositories {
     //maven("https://packages.jetbrains.team/maven/p/skija/maven")
     maven("https://repo.kotlin.link")
     google()
+    maven("https://jitpack.io")
 }
 
 dependencies {
@@ -26,6 +27,10 @@ dependencies {
     testImplementation("org.jetbrains.kotlin:kotlin-test")
     implementation("com.twelvemonkeys.imageio:imageio-jpeg:3.12.0") // Yay! twelveMonkeys works 😄
     implementation("dev.romainguy:kotlin-math:1.6.0")
+    //implementation("com.github.tehras:charts:0.2.4-alpha")
+    //implementation("com.github.jaikeerthick:Composable-Graphs:v1.2.3")
+    //implementation("co.yml:ycharts:2.1.0")
+    implementation ("io.github.ehsannarmani:compose-charts:0.1.7")
 
     //implementation("org.jetbrains.kotlinx:multik-core:0.2.3")
     //implementation("org.jetbrains.kotlinx:multik-default:0.2.3")

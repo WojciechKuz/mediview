@@ -294,11 +294,14 @@ class UIManager(val uiImageMap: MutableMap<ExtView, ImageBitmap?>) {
         val xzAngle = angleValues[Angle.XZAngle]!! * 90f
         val yzAngle = angleValues[Angle.YZAngle]!! * 90f
         val angleText = "horizontal: ${"%.2f".format(xzAngle)}°, vertical: ${"%.2f".format(yzAngle)}°"
+        val valueText = "value: ${valueAt(mappedDepths[ExtView.SIDE]!!, mappedDepths[ExtView.TOP]!!, mappedDepths[ExtView.SLICE]!!)}; "
         when(displaying) {
-            Displaying.THREE -> textSetter?.set(depthsText)
-            Displaying.PROJECTION -> textSetter?.set("depth ${mappedDepths[ExtView.FREE]}; angles: $angleText")
-            Displaying.ANIMATION -> textSetter?.set("depth ${mappedDepths[ExtView.FREE]}; angles: $angleText")
+            Displaying.THREE -> textSetter?.set(valueText + depthsText)
+            Displaying.PROJECTION -> textSetter?.set(valueText + "depth ${mappedDepths[ExtView.FREE]}; angles: $angleText")
+            Displaying.ANIMATION -> textSetter?.set(valueText + "depth ${mappedDepths[ExtView.FREE]}; angles: $angleText")
         }
+        // probably there's a better place to call this function, but it's light enough, so unnecessary calls are ok.
+        updateValuesAlong()
     }
     private var minValUpdater: UISetter<Int>? = null
     private var maxValUpdater: UISetter<Int>? = null
@@ -306,6 +309,33 @@ class UIManager(val uiImageMap: MutableMap<ExtView, ImageBitmap?>) {
     fun setMinValUpdater(setter: UISetter<Int>) { minValUpdater = setter }
     fun setMaxValUpdater(setter: UISetter<Int>) { maxValUpdater = setter }
     fun setFirstHitUpdater(setter: UISetter<Int>) { firstHitUpdater = setter }
+    fun valueAt(x: Int, y: Int, z: Int): Short {
+        if(!::imageAndData.isInitialized || !::size.isInitialized) return 0
+        return imageAndData.imageArray.valueAt(x, y, z)
+    }
+    /** reference */
+    var valuesAlong: MutableMap<View, ShortArray>? = null
+    /** return value along given view's depth */
+    fun valueAlong(x: Int, y: Int, z: Int, view: View): ShortArray {
+        if(!::imageAndData.isInitialized || !::size.isInitialized) return shortArrayOf(50, 60, 70, 60, 60, 60, 90)
+        return when(view) {
+            View.SLICE -> imageAndData.imageArray.getValuesAlongZ(x, y)
+            View.SIDE -> imageAndData.imageArray.getValuesAlongX(z, y)
+            View.TOP -> imageAndData.imageArray.getValuesAlongY(z, x)
+        }
+    }
+    fun updateValuesAlong() {
+        val mappedDepths = depthValues.keys.associateWith { key -> (depthValues[key]!! * maxDepth(key)).toInt() }
+        if(mode == Mode.NONE && displaying == Displaying.THREE && valuesAlong != null) {
+            // 3x512
+            fun setValuesAlong(view: View) {
+                valuesAlong!![view] = valueAlong(mappedDepths[ExtView.SIDE]!!,mappedDepths[ExtView.TOP]!!, mappedDepths[ExtView.SLICE]!!, view)
+            }
+            setValuesAlong(View.SLICE)
+            setValuesAlong(View.SIDE)
+            setValuesAlong(View.TOP)
+        }
+    }
 
 
     // Getting image

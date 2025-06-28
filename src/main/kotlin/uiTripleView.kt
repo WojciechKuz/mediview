@@ -13,6 +13,7 @@ import androidx.compose.material.Slider
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -22,6 +23,8 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
 import transform3d.ExtView
+import transform3d.View
+import kotlin.ShortArray
 
 @Composable
 @Preview
@@ -79,71 +82,90 @@ fun threeImagesBlock(imgsize: Int, uiImageMap: MutableMap<ExtView, ImageBitmap?>
         }
     }
 }
+
 @Composable
 @Preview
-fun threeSlidersBlock(imgsize: Int, manager: UIManager) {
-    Box { ui3Sliders(imgsize, manager) }
-}
 /** Okienko z suwakami. dodaje 3 suwaki, musi być umieszczone w layoucie. */
+fun threeSlidersBlock(imgsize: Int, manager: UIManager) {
+    Box {
+        val sliderValChange = manager::viewSliderChange
+        var redSliderPosition by remember { mutableStateOf(Config.sliderRange.startVal) }
+        var greenSliderPosition by remember { mutableStateOf(Config.sliderRange.startVal) }
+        var blueSliderPosition by remember { mutableStateOf(Config.sliderRange.startVal) }
+        fun lambdakid(view: ExtView, setter: UISetter<Float>) {
+            if (manager.sliderSetters[view] == null) manager.sliderSetters[view] = setter
+        }
+        lambdakid(ExtView.SLICE) { redSliderPosition = it }
+        lambdakid(ExtView.TOP) { greenSliderPosition = it }
+        lambdakid(ExtView.SIDE) { blueSliderPosition = it }
+        //val interactionSource = remember { MutableInteractionSource() }
+        //val zzz by interactionSource.collectIsHoveredAsState()
+        val modifier = Modifier.width(imgsize.dp)
+        Row {
+            Column {
+                Text("slice: ${manager.scaleDepthSlider(ExtView.SLICE, redSliderPosition)}")
+                Slider(
+                    value = redSliderPosition,
+                    valueRange = Config.sliderRange.range,
+                    onValueChange = {
+                        redSliderPosition = it
+                        sliderValChange(it, ExtView.SLICE)
+                    },
+                    colors = getSliderDefaultColors(Color.Red),
+                    steps = Config.sliderSteps,
+                    modifier = modifier,
+                )
+            }
+            Column {
+                Text("top: ${manager.scaleDepthSlider(ExtView.TOP, greenSliderPosition)}")
+                Slider(
+                    value = greenSliderPosition,
+                    valueRange = Config.sliderRange.range,
+                    onValueChange = {
+                        greenSliderPosition = it
+                        sliderValChange(it, ExtView.TOP)
+                    },
+                    colors = getSliderDefaultColors(Color.Green),
+                    steps = Config.sliderSteps,
+                    modifier = modifier
+                )
+            }
+            Column {
+                Text("side: ${manager.scaleDepthSlider(ExtView.SIDE, blueSliderPosition)}")
+                Slider(
+                    value = blueSliderPosition,
+                    valueRange = Config.sliderRange.range,
+                    onValueChange = {
+                        blueSliderPosition = it
+                        sliderValChange(it, ExtView.SIDE)
+                    },
+                    colors = getSliderDefaultColors(Color.Blue),
+                    steps = Config.sliderSteps,
+                    modifier = modifier,
+                    interactionSource = remember { MutableInteractionSource() }
+                )
+            }
+        } // row end
+    } // box end
+} // end fun
+
 @Composable
 @Preview
-private fun ui3Sliders(imgsize: Int, manager: UIManager) {
-    val sliderValChange = manager::viewSliderChange
-    var redSliderPosition by remember { mutableStateOf(Config.sliderRange.startVal) }
-    var greenSliderPosition by remember { mutableStateOf(Config.sliderRange.startVal) }
-    var blueSliderPosition by remember { mutableStateOf(Config.sliderRange.startVal) }
-    fun lambdakid(view: ExtView, setter: UISetter<Float>) {
-        if(manager.sliderSetters[view] == null) manager.sliderSetters[view] = setter
+fun threeGraphsBlock(imgsize: Int, manager: UIManager) {
+    var valuesAlong = remember {
+        mutableStateMapOf<View, ShortArray>(
+            View.SLICE to shortArrayOf(50, 90, 50, 90, 90, 50, 90),
+            View.SIDE to shortArrayOf(50, 90, 50, 90, 90, 50, 90),
+            View.TOP to shortArrayOf(50, 90, 50, 90, 90, 50, 90)
+        )
     }
-    lambdakid(ExtView.SLICE) { redSliderPosition = it }
-    lambdakid(ExtView.TOP) { greenSliderPosition = it }
-    lambdakid(ExtView.SIDE) { blueSliderPosition = it }
-    //val interactionSource = remember { MutableInteractionSource() }
-    //val zzz by interactionSource.collectIsHoveredAsState()
-    val modifier = Modifier.width(imgsize.dp)
-    Row {
-        Column {
-            Text("slice: ${manager.scaleDepthSlider(ExtView.SLICE, redSliderPosition)}")
-            Slider(
-                value = redSliderPosition,
-                valueRange = Config.sliderRange.range,
-                onValueChange = {
-                    redSliderPosition = it
-                    sliderValChange(it, ExtView.SLICE)
-                },
-                colors = getSliderDefaultColors(Color.Red),
-                steps = Config.sliderSteps,
-                modifier = modifier,
-            )
-        }
-        Column {
-            Text("top: ${manager.scaleDepthSlider(ExtView.TOP, greenSliderPosition)}")
-            Slider(
-                value = greenSliderPosition,
-                valueRange = Config.sliderRange.range,
-                onValueChange = {
-                    greenSliderPosition = it
-                    sliderValChange(it, ExtView.TOP)
-                },
-                colors = getSliderDefaultColors(Color.Green),
-                steps = Config.sliderSteps,
-                modifier = modifier
-            )
-        }
-        Column {
-            Text("side: ${manager.scaleDepthSlider(ExtView.SIDE, blueSliderPosition)}")
-            Slider(
-                value = blueSliderPosition,
-                valueRange = Config.sliderRange.range,
-                onValueChange = {
-                    blueSliderPosition = it
-                    sliderValChange(it, ExtView.SIDE)
-                },
-                colors = getSliderDefaultColors(Color.Blue),
-                steps = Config.sliderSteps,
-                modifier = modifier,
-                interactionSource = remember { MutableInteractionSource() }
-            )
-        }
+    if(manager.valuesAlong == null) {
+        manager.valuesAlong = valuesAlong
+        manager.updateValuesAlong()
     }
+    Box { Row {
+        showGraphForData(imgsize, Color.Red, valuesAlong[View.SLICE]!!)
+        showGraphForData(imgsize, Color.Green, valuesAlong[View.TOP]!!)
+        showGraphForData(imgsize, Color.Blue, valuesAlong[View.SIDE]!!)
+    }}
 }

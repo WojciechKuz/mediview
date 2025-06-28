@@ -24,20 +24,29 @@ fun App() {
 
     // get values
     val imgsize = Config.displayImageSize
-    val modif = Modifier.width((imgsize * 3).dp).height((imgsize + 60 + 60 + 60).dp) // 3+1 modifier
+
+    val uiImageMap: MutableMap<ExtView, ImageBitmap?> = remember { mutableStateMapOf(
+        ExtView.SLICE to null as ImageBitmap?,
+        ExtView.SIDE to null as ImageBitmap?,
+        ExtView.TOP to null as ImageBitmap?,
+        ExtView.FREE to null as ImageBitmap?,
+    ) }
+    var manager: UIManager by remember { mutableStateOf(UIManager(uiImageMap)) }
+
+    var modif by remember { mutableStateOf(
+        Modifier.width((imgsize * 3).dp).height(listOf(
+            imgsize,
+            60 + 60 + 60, // topbar, 2 rows of sliders
+            120 //if(manager.mode == Mode.NONE && manager.displaying == Displaying.THREE) 120 else 0 // graphs
+            ).sum().dp
+        )
+    ) }
 
     // Actual UI:
     MaterialTheme {
         Column(modifier = modif) {
             var filePicked by remember { mutableStateOf(false) } // UI redraw is triggered when value changes
 
-            val uiImageMap: MutableMap<ExtView, ImageBitmap?> = remember { mutableStateMapOf(
-                ExtView.SLICE to null as ImageBitmap?,
-                ExtView.SIDE to null as ImageBitmap?,
-                ExtView.TOP to null as ImageBitmap?,
-                ExtView.FREE to null as ImageBitmap?,
-            ) }
-            var manager: UIManager by remember { mutableStateOf(UIManager(uiImageMap)) }
             if (!filePicked) {
                 manager.loadDicom()
                 filePicked = true
@@ -72,6 +81,8 @@ fun App() {
                         mode = manager.mode
                         modeText = "Mode: ${manager.mode}"
                         manager.buttonChange()
+                        if(mode == Mode.NONE && displ == Displaying.THREE)
+                            manager.updateValuesAlong()
                     },
                     modifier = Modifier.padding(end = 8.dp)
                 ) {
@@ -88,6 +99,8 @@ fun App() {
                         displText = "Display: ${manager.displaying}"
                         if(manager.displaying != Displaying.ANIMATION) // animation is same view as projection, no need to redraw
                             manager.buttonChange()
+                        if(mode == Mode.NONE && displ == Displaying.THREE)
+                            manager.updateValuesAlong()
                     },
                     modifier = Modifier.padding(end = 8.dp)
                 ) {
@@ -121,6 +134,9 @@ fun App() {
                 Displaying.THREE -> {
                     threeImagesBlock(imgsize, uiImageMap, manager)
                     threeSlidersBlock(imgsize, manager)
+                    if(manager.mode == Mode.NONE) {
+                        threeGraphsBlock(imgsize, manager)
+                    }
                 }
                 Displaying.PROJECTION -> {
                     projectionBlock(imgsize, uiImageMap, manager)

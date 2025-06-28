@@ -15,7 +15,8 @@ object Config {
     /** Mark a pixel to color it red. */ val meansColorRed: Short = 32730 // max is 32768
     val redPixel = byteArrayOf(160.toByte(), 12, 0x00, 0xFF.toByte()) // 160, 12, 0, 255
     // UI:
-    val displayImageSize = 400 //512
+    val displayImageSize = 360 //400 //512
+    val graphHeight = 120
     val uiRescaleWidth = false
     val useThreads = 8
 }

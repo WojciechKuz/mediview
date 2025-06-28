@@ -309,6 +309,22 @@ class ArrayOps(
         }
     }
 
+    fun getValuesAlongZ(x: Int, y: Int): ShortArray {
+        return ShortArray(size.depth) { zi->
+            array[absoluteIndexOf3(x, y, zi)]
+        }
+    }
+    fun getValuesAlongY(z: Int, x: Int): ShortArray {
+        return ShortArray(size.depth) { yi->
+            array[absoluteIndexOf3(x, yi, z)]
+        }
+    }
+    fun getValuesAlongX(z: Int, y: Int): ShortArray {
+        return ShortArray(size.depth) { xi->
+            array[absoluteIndexOf3(xi, y, z)]
+        }
+    }
+
     private fun ensureInBounds3D(vec: Float4): Float3 {
         fun ensure(index: Float, upperBound: Int): Float {
             return when {
@@ -345,6 +361,9 @@ class ArrayOps(
         }
         return InterpolationSA.linearInterpolation(collapsedYXArray, dz.toDouble())
     }
+
+    fun valueAt(x: Int, y: Int, z: Int): Short = manualValueAtIndex3D(Float4(x.toFloat(), y.toFloat(), z.toFloat(), 1f))
+    fun valueAt(x: Float, y: Float, z: Float): Short = manualValueAtIndex3D(Float4(x, y, z, 1f))
 
     /** Performs Trilinear interpolation. It's called manual cuz it doesn't use arrays.
      * Seems like using arrays in Kotlin is too slow. WTF Kotlin??? */
