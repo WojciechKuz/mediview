@@ -26,7 +26,7 @@ fun projectionBlock(imgsize: Int, uiImageMap: MutableMap<ExtView, ImageBitmap?>,
     Box {
         Image(
             choosePainter(uiImageMap[ExtView.FREE], "loading.jpg"),
-            "slice XY",
+            "slice projection",
             modifier = Modifier.width(imgsize.dp).height(imgsize.dp).border(1.dp, Color.DarkGray)
                 /*.pointerInput(Unit) {
                     detectTapGestures(

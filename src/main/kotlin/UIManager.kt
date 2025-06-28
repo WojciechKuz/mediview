@@ -287,6 +287,7 @@ class UIManager(val uiImageMap: MutableMap<ExtView, ImageBitmap?>) {
     private var textSetter: UISetter<String>? = null
     fun setTextSetter(setter: UISetter<String>) { textSetter = setter }
 
+    /** Update text in row with buttons. Print there position, value, angles. */
     fun textUpdater() {
         if(!::imageAndData.isInitialized || !::size.isInitialized) return
         val mappedDepths = depthValues.keys.associateWith { key -> (depthValues[key]!! * maxDepth(key)).toInt() }
