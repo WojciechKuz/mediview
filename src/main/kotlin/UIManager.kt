@@ -23,6 +23,7 @@ import kotlin.system.measureTimeMillis
 
 class UIManager(val uiImageMap: MutableMap<ExtView, ImageBitmap?>) {
     private lateinit var imageAndData: ImageAndData<ArrayOps>
+    val arrayOps: ArrayOps; get() = imageAndData.imageArray
     private lateinit var size: MySize3
     private val freeQueue = LaunchQueue()
     private val allQueue = LaunchQueue()
@@ -46,7 +47,7 @@ class UIManager(val uiImageMap: MutableMap<ExtView, ImageBitmap?>) {
         Angle.YZAngle to 0,
     )
 
-    private var firstHitValue: Short = 0 // set real value in loadDicom()
+    var firstHitValue: Short = 0 // set real value in loadDicom()
     var adjustedValueRange = 0..1 // set real value in loadDicom()
         private set
     private fun getImageValueRange(): IntRange {

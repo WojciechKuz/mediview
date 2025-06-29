@@ -6,17 +6,15 @@ import dev.romainguy.kotlin.math.Mat4
 import dev.romainguy.kotlin.math.rotation
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.joinAll
-import kotlinx.coroutines.launch
 import kotlin.collections.toTypedArray
 import kotlin.math.ceil
 import kotlin.math.floor
 import kotlin.math.sin
 
-/** @param array default it's Z.Y.X */
+/** Depth is deduced from array.size, width, height
+ * @param array default it's Z.Y.X */
 class ArrayOps(
     /** array combining Z.Y.X. Size must be specified. Z size is deduced. */
     var array: ShortArray, initialWidth: Int, initialHeight: Int,

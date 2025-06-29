@@ -46,8 +46,11 @@ class Indices2(val size: MySize2) {
         array[absIndex]
 }
 
+///** Execute for loop. Execution is divided by `Config.useThreads` and each part is executed by different coroutine. */
+suspend fun coroutineForLoop(loopTimes: Int, thingToDo: (Int) -> Unit) = coroutineForLoopSus(loopTimes, thingToDo)
+
 /** Execute for loop. Execution is divided by `Config.useThreads` and each part is executed by different coroutine. */
-suspend fun coroutineForLoop(loopTimes: Int, thingToDo: (Int) -> Unit) {
+suspend fun coroutineForLoopSus(loopTimes: Int, thingToDo: suspend (Int) -> Unit) {
     val threads = Config.useThreads
     val workPerThread = loopTimes / threads
     val jobList = mutableListOf<Job>()
@@ -79,6 +82,12 @@ suspend fun coroutineForLoop(loopTimes: Int, thingToDo: (Int) -> Unit) {
     }
 
     jobList.joinAll()
+}
+
+suspend fun justForLoop(loopTimes: Int, thingToDo: suspend (Int) -> Unit) {
+    for(i in 0 until loopTimes) {
+        thingToDo(i)
+    }
 }
 
 /** Create an ShortArray with element initialization. Initialization of the array is divided by `Config.useThreads` and each part is executed by different coroutine. */

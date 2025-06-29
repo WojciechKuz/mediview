@@ -244,13 +244,25 @@ suspend fun getComposeImage(imgAndData: ImageAndData<ArrayOps>, view: View, dept
  * @param yzAngle vertical angle, degrees
  * @param xzAngle horizontal angle, degrees
  * @param mode which mode */
-suspend fun getComposeImageAngled(imgAndData: ImageAndData<ArrayOps>, view: ExtView, depth: Float, valRange: IntRange,
+suspend fun getComposeImageAngled(
+    imgAndData: ImageAndData<ArrayOps>, view: ExtView, depth: Float, valRange: IntRange,
+    yzAngle: Double, xzAngle: Double, mode: Mode = Mode.NONE, color: MyColor = MyColor.GREYSCALE, firstHitVal: Short = -16000
+): ImageBitmap? = getComposeImageAngled(imgAndData.imageArray, view, depth, valRange, yzAngle, xzAngle, mode, color, firstHitVal)
+
+/** Use this function to get image bitmap that can be displayed in UI.
+ * @param imgArr ArrayOps
+ * @param view which view to display
+ * @param depth depth of view, normalized
+ * @param valRange value range in which values will have scaled color. Values outside this range take max or min value.
+ * @param yzAngle vertical angle, degrees
+ * @param xzAngle horizontal angle, degrees
+ * @param mode which mode */
+suspend fun getComposeImageAngled(imgArr: ArrayOps, view: ExtView, depth: Float, valRange: IntRange,
                           yzAngle: Double, xzAngle: Double, mode: Mode = Mode.NONE, color: MyColor = MyColor.GREYSCALE, firstHitVal: Short = -16000): ImageBitmap? {
     if(depth !in 0f..1f) {
         println("depth $depth out of range 0.0--1.0")
         return null
     }
-    val imgArr = imgAndData.imageArray
     val depthIndex = round(depth * imgArr.size.depth).toInt()
     /** merge starting at this index */
     val mergeFromIndex = if(mode == Mode.NONE) 0 else depthIndex // NONE needs to start at 0

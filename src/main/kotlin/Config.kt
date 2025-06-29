@@ -19,6 +19,9 @@ object Config {
     val graphHeight = 120
     val uiRescaleWidth = false
     val useThreads = 8
+    val animationResolution = 128
+    val minSpeed = 0.0625f // 1-16th
+    val maxSpeed = 16f
 }
 class MySliderRange(val start: Float, val end: Float) {
     val range = start..(end - 1) // do not change
