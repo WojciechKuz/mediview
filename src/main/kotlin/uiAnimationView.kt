@@ -24,6 +24,8 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
 import transform3d.Angle
 import transform3d.ExtView
+import transform3d.InterpolationSA
+import transform3d.printAngles
 import kotlin.math.min
 
 /** if speed's less than 1, show it as fraction */
@@ -31,7 +33,7 @@ fun iShowSpeedNicely(speed: Float) = if(speed < 1f) "1/${(1f/speed).toInt()}x" e
 
 @Composable
 @Preview
-fun animationBlock(imgsize: Int, uiImageMap: MutableMap<ExtView, ImageBitmap?>, manager: UIManager) {
+fun animationBlock(imgsize: Int, uiImageMap: MutableMap<ExtView, ImageBitmap?>, manager: UIManager) { // TODO just turned computer on? Test this program
     val modifier = Modifier.padding(end = 2.dp)
     Box {
         Row {
@@ -39,6 +41,7 @@ fun animationBlock(imgsize: Int, uiImageMap: MutableMap<ExtView, ImageBitmap?>, 
             var animate by remember { mutableStateOf(AnimationManager(manager)) }
             // I wanted to make frame generation progress like: "12/30 frames generated". But it's parallelized by z axis, not by frame count.
             var infoText by remember { mutableStateOf("waiting for animation parameters")}
+            if(animate.infoTextSetter == null) animate.infoTextSetter = UISetter { infoText = it }
 
             var speed by remember { mutableStateOf(1f) }
             var play by remember { mutableStateOf(false) }
@@ -48,10 +51,21 @@ fun animationBlock(imgsize: Int, uiImageMap: MutableMap<ExtView, ImageBitmap?>, 
             var frameIdx by remember { mutableStateOf(0) }
             var frame by remember { mutableStateOf<ImageBitmap?>(null) }
 
+            var framesSliderPosition by remember { mutableStateOf(4f) }
+            animate.setSliderPos = UISetter { framesSliderPosition = it }
+            var sliderRange: ClosedFloatingPointRange<Float> by remember { mutableStateOf(0f..0f) }
+            animate.setFrameRange = UISetter { sliderRange = it }
+
             LaunchedEffect(animate, play) {
+                println("launchEffect, play is $play")
                 while(play) {
-                    frame = animate.getFrame(frameIdx)
-                    delay((1000*speed).toLong())
+                    animate.safeGetFrame(frameIdx) {
+                        frame = it
+                    }
+                    delay((1000/speed).toLong())
+                    framesSliderPosition = InterpolationSA.interpolate2Values(
+                        sliderRange.start, sliderRange.endInclusive, frameIdx * 1f / animate.framesCount
+                    )
                     frameIdx = animate.nextFrameIdx(frameIdx)
                 }
             }
@@ -64,7 +78,7 @@ fun animationBlock(imgsize: Int, uiImageMap: MutableMap<ExtView, ImageBitmap?>, 
             )
             Box(
                 modifier = Modifier.width((2*imgsize).dp).height(imgsize.dp).padding(start = 2.dp)
-            ) { Column{
+            ) { Column {
                 // animation control panel
                 var firstAngleText by remember { mutableStateOf<String>("Set starting angles") }
                 var secondAngleText by remember { mutableStateOf<String>("Set finishing angles") }
@@ -72,7 +86,7 @@ fun animationBlock(imgsize: Int, uiImageMap: MutableMap<ExtView, ImageBitmap?>, 
                 Row {
                     Button(
                         onClick = {
-                            animate.animFrameCount = min(frameCountText.trim().toInt(), 720)
+                            animate.animFrameCount = min(frameCountText.trim().toInt(), Config.maxAnimFrameCount)
                             animate.generateAnimation()
                         }, modifier = modifier
                     ) {
@@ -90,7 +104,8 @@ fun animationBlock(imgsize: Int, uiImageMap: MutableMap<ExtView, ImageBitmap?>, 
                 Row {
                     Button(
                         onClick = {
-                            animate.animStartAngles = manager.angleValues
+                            animate.animStartAngles = manager.angleValues.map { (key, value) -> key to value * 180f }.toMap().toMutableMap()
+                            firstAngleText = "start angle ${printAngles(animate.animStartAngles)}"
                         }, modifier = modifier
                     ) {
                         Text("start angle")
@@ -101,7 +116,8 @@ fun animationBlock(imgsize: Int, uiImageMap: MutableMap<ExtView, ImageBitmap?>, 
                 Row {
                     Button(
                         onClick = {
-                            animate.animEndAngles = manager.angleValues
+                            animate.animEndAngles = manager.angleValues.map { (key, value) -> key to value * 180f }.toMap().toMutableMap() //manager.angleValues.toMutableMap() // copy no change
+                            secondAngleText = "end angle ${printAngles(animate.animEndAngles)}"
                         }, modifier = modifier
                     ) {
                         Text("finish angle")
@@ -121,10 +137,10 @@ fun animationBlock(imgsize: Int, uiImageMap: MutableMap<ExtView, ImageBitmap?>, 
 
                 Row {
                     var playPauseText by remember { mutableStateOf<String>("Play") }
+                    playPauseText = if(play) "Pause" else "Play"
                     Button(
                         onClick = {
                             play = !play
-                            playPauseText = if(play) "Pause" else "Play"
                         }, modifier = modifier
                     ) {
                         Text(playPauseText)
@@ -166,10 +182,6 @@ fun animationBlock(imgsize: Int, uiImageMap: MutableMap<ExtView, ImageBitmap?>, 
                 } // speed control
 
                 Row {
-                    var framesSliderPosition by remember { mutableStateOf(4f) }
-                    animate.setSliderPos = UISetter { framesSliderPosition = it }
-                    var sliderRange: ClosedFloatingPointRange<Float> by remember { mutableStateOf(0f..0f) }
-                    animate.setFrameRange = UISetter { sliderRange = it }
                     Column {
                         Text("Animation:")
                         Slider(
@@ -179,7 +191,7 @@ fun animationBlock(imgsize: Int, uiImageMap: MutableMap<ExtView, ImageBitmap?>, 
                                 framesSliderPosition = it
                                 if(it.toInt() < animate.framesCount) {
                                     frameIdx = it.toInt()
-                                    frame = animate.getFrame(frameIdx)
+                                    animate.safeGetFrame(frameIdx) { fr -> frame = fr }
                                 }
                             },
                             colors = getSliderDefaultColors(Color.DarkGray),
@@ -189,7 +201,7 @@ fun animationBlock(imgsize: Int, uiImageMap: MutableMap<ExtView, ImageBitmap?>, 
                     }
                 } // frame slider
 
-            } }
+            } } // box & column end
         }
 
     }
@@ -233,9 +245,10 @@ fun animationBlock(imgsize: Int, uiImageMap: MutableMap<ExtView, ImageBitmap?>, 
                     modifier = modifier,
                 )
             }
+            /*
             var depthSliderPosition by remember { mutableStateOf(Config.sliderRange.startVal) }
             Column {
-                Text("głębokość ${manager.scaleDepthSlider(ExtView.FREE, verticalSliderPosition)}")
+                Text("głębokość ${manager.scaleDepthSlider(ExtView.FREE, depthSliderPosition)}")
                 Slider(
                     value = depthSliderPosition,
                     valueRange = Config.sliderRange.range,
@@ -248,6 +261,7 @@ fun animationBlock(imgsize: Int, uiImageMap: MutableMap<ExtView, ImageBitmap?>, 
                     modifier = modifier,
                 )
             }
+            */
         }
     }
 }

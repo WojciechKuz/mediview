@@ -81,7 +81,7 @@ fun projectionBlock(imgsize: Int, uiImageMap: MutableMap<ExtView, ImageBitmap?>,
             //singleSlider(imgsize, "kąt pionowy") { manager.angleSliderChange(it, Angle.YZAngle) }
             var depthSliderPosition by remember { mutableStateOf(Config.sliderRange.startVal) }
             Column {
-                Text("głębokość ${manager.scaleDepthSlider(ExtView.FREE, verticalSliderPosition)}")
+                Text("głębokość ${manager.scaleDepthSlider(ExtView.FREE, depthSliderPosition)}")
                 Slider(
                     value = depthSliderPosition,
                     valueRange = Config.sliderRange.range,

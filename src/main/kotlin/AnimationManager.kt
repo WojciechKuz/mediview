@@ -10,7 +10,8 @@ import transform3d.MySize3
 import transform3d.createShortArrayWithCoroutines
 import transform3d.getComposeImageAngled
 import transform3d.justForLoop
-import kotlin.collections.get
+import transform3d.printAngles
+import transform3d.InterpolationSA as Interpol
 
 class AnimationManager(val managerRef: UIManager) {
     var animStartAngles = mutableMapOf(
@@ -23,7 +24,7 @@ class AnimationManager(val managerRef: UIManager) {
     )
     var animFrameCount = 0
 
-    var depth = 0 // for now, leave 0
+    var depth = 0.5f // for now, leave it
 
     private var volume: ArrayOps? = null
     private var size: MySize3
@@ -38,15 +39,17 @@ class AnimationManager(val managerRef: UIManager) {
      * @param source should contain cube sized array. This means x = y = z. */
     private fun setVolume(source: ArrayOps) = CoroutineScope(Dispatchers.Default).launch {
         val sourceIndi = Indices3(source.size)
-        val sizeScale = source.size.width / size.width // this times smaller: 4
+        val sizeScale = source.size.width / size.width // this times smaller: 4 // 512/128 = 4
         val targetVolume = createShortArrayWithCoroutines(size.total) { i -> // i = targetIndi.total
-            source.array[ indi.absoluteIndexOf3(
-                sourceIndi.absoluteToX(i * sizeScale),
-                sourceIndi.absoluteToY(i * sizeScale),
-                sourceIndi.absoluteToZ(i * sizeScale)
+            source.array[ sourceIndi.absoluteIndexOf3(
+                indi.absoluteToX(i) * sizeScale,
+                indi.absoluteToY(i) * sizeScale,
+                indi.absoluteToZ(i) * sizeScale
             ) ]
         }
         volume = ArrayOps(targetVolume, size.width, size.height)
+    }.invokeOnCompletion {
+        println("Data copied to smaller arrayOps")
     }
 
     /** Generated frames */
@@ -54,18 +57,16 @@ class AnimationManager(val managerRef: UIManager) {
     /** get only the number of animation frames. To set target animation frame count use animFrameCount */
     val framesCount: Int; get() = frames.size
 
-    /** Used in interpolating angle depending on which frame it is.
-     * @param index in range 0 to 1 */ // alternative: data0 + index*(data1-data0)
-    private fun interpolateValues(data0: Float, data1: Float, index: Float): Float = ( (data0 * (1-index)) + (data1 * index) )
-
     private suspend fun generateFrame(xzAngle: Double, yzAngle: Double): ImageBitmap? {
-        return getComposeImageAngled(volume!!, ExtView.FREE, depth.toFloat(),
+        return getComposeImageAngled(volume!!, ExtView.FREE, depth,
             managerRef.adjustedValueRange, yzAngle, xzAngle,
             managerRef.mode, managerRef.color, managerRef.firstHitValue)
     }
     var genFinish: UISetter<Boolean>? = null
+
     fun generateAnimation() {
         if(volume == null) return
+        println("Generating $animFrameCount frames of animation with starting angle ${printAngles(animStartAngles)} and end ${printAngles(animEndAngles)}")
         infoTextSetter?.set("Generating...")
         CoroutineScope(Dispatchers.Default).launch {
             frames = mutableListOf()
@@ -74,18 +75,23 @@ class AnimationManager(val managerRef: UIManager) {
             justForLoop(animFrameCount)
             { i ->
                 val frameAngles = animStartAngles.keys.map { key ->
-                    key to interpolateValues(
+                    key to Interpol.interpolate2Values(
                         animStartAngles[key]!!,
                         animEndAngles[key]!!,
                         i * 1f / animFrameCount
-                    ).toDouble()
+                    )
                 }.associate { it }
-                val bitmap = generateFrame(frameAngles[Angle.XZAngle]!!, frameAngles[Angle.YZAngle]!!)
-                if(bitmap == null) return@justForLoop
+                val bitmap = generateFrame(frameAngles[Angle.XZAngle]!!.toDouble(), frameAngles[Angle.YZAngle]!!.toDouble())
+                if(bitmap == null) {
+                    println("return due to null bitmap")
+                    return@justForLoop
+                }
                 frames.add(bitmap)
             }
         }.invokeOnCompletion {
             infoTextSetter?.set("Animation is ready")
+            println("Animation is ready")
+            println("frames array has ${frames.size} frames")
             setSliderPos?.set(0f)
             setFrameRange?.set(0f..(frames.size-1).toFloat())
             genFinish?.set(true)
@@ -95,9 +101,6 @@ class AnimationManager(val managerRef: UIManager) {
     var setFrameRange: UISetter<ClosedFloatingPointRange<Float>>? = null
     var setSliderPos: UISetter<Float>? = null
 
-    ///** control play / pause */
-    //var played = false
-    //fun playOrPause() { played = !played }
     enum class Animode {
         LOOP,
         REVERSE,
@@ -107,7 +110,7 @@ class AnimationManager(val managerRef: UIManager) {
     private var direction = 1
     fun nextFrameIdx(currFrameIdx: Int): Int {
         val newIdx = when(aMode) {
-            Animode.LOOP -> currFrameIdx % frames.size
+            Animode.LOOP -> if(frames.isNotEmpty()) (currFrameIdx + 1) % frames.size else currFrameIdx
             Animode.REVERSE -> {
                 when(currFrameIdx) {
                     0 -> direction = 1
@@ -118,6 +121,14 @@ class AnimationManager(val managerRef: UIManager) {
             Animode.PAUSE -> if (currFrameIdx + 1 < frames.size) currFrameIdx + 1 else currFrameIdx
         }
         return newIdx
+    }
+    fun safeGetFrame(frameIdx: Int, whenGotFrame: (ImageBitmap) -> Unit) {
+        if(frameIdx < frames.size) {
+            whenGotFrame(frames[frameIdx])
+        }
+        else {
+            println("Can't get frame for $frameIdx")
+        }
     }
     fun getFrame(frameIdx: Int) = frames[frameIdx]
 

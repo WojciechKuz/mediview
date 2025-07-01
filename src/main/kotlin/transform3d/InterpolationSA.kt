@@ -95,5 +95,7 @@ object InterpolationSA {
     fun manualLinearInterpolationOf2(data0: Short, data1: Short, index: Double): Short =
         round( (data0 * (1-index)) + (data1 * index) ).toInt().toShort()
 
-    // also, 1:1 and fill rest with last. If to shorter, just cut off
+    /** Used in interpolating angle depending on which frame it is.
+     * @param index in range 0 to 1 */ // alternative: data0 + index*(data1-data0)
+    fun interpolate2Values(data0: Float, data1: Float, index: Float): Float = ( (data0 * (1-index)) + (data1 * index) )
 }

@@ -146,6 +146,9 @@ enum class Angle {
     /** poziomy kąt */ XZAngle,
     /** pionowy kąt */ YZAngle,
 }
+fun printAngles(angleMap: Map<Angle, Float>): String {
+    return "XZ ${"%.2f".format(angleMap[Angle.XZAngle])}°, YZ ${"%.2f".format(angleMap[Angle.YZAngle])}°"
+}
 enum class MyColor {
     GREYSCALE,
     /** Red, yellow, green scale */ RYGSCALE

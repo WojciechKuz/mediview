@@ -189,7 +189,8 @@ class UIManager(val uiImageMap: MutableMap<ExtView, ImageBitmap?>) {
         val view = angle.toExtView()
 
         // discards previous operations if they didn't complete
-        assignNewImage(view)
+        if(displaying != Displaying.ANIMATION)
+            assignNewImage(view)
         textUpdater()
     }
 
@@ -221,8 +222,10 @@ class UIManager(val uiImageMap: MutableMap<ExtView, ImageBitmap?>) {
         sliderSetters[view1]?.set( Config.sliderRange.denormalize(absx) )
         sliderSetters[view2]?.set( Config.sliderRange.denormalize(absy) )
 
-        assignNewImage(view1)
-        assignNewImage(view2)
+        if(displaying != Displaying.ANIMATION) {
+            assignNewImage(view1)
+            assignNewImage(view2)
+        }
         textUpdater()
     }
 
@@ -293,8 +296,8 @@ class UIManager(val uiImageMap: MutableMap<ExtView, ImageBitmap?>) {
         if(!::imageAndData.isInitialized || !::size.isInitialized) return
         val mappedDepths = depthValues.keys.associateWith { key -> (depthValues[key]!! * maxDepth(key)).toInt() }
         val depthsText = "x: ${mappedDepths[ExtView.SIDE]}, y: ${mappedDepths[ExtView.TOP]}, z: ${mappedDepths[ExtView.SLICE]}"
-        val xzAngle = angleValues[Angle.XZAngle]!! * 90f
-        val yzAngle = angleValues[Angle.YZAngle]!! * 90f
+        val xzAngle = angleValues[Angle.XZAngle]!! * 180f
+        val yzAngle = angleValues[Angle.YZAngle]!! * 180f
         val angleText = "horizontal: ${"%.2f".format(xzAngle)}°, vertical: ${"%.2f".format(yzAngle)}°"
         val valueText = "value: ${valueAt(mappedDepths[ExtView.SIDE]!!, mappedDepths[ExtView.TOP]!!, mappedDepths[ExtView.SLICE]!!)}; "
         when(displaying) {

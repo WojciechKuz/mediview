@@ -20,6 +20,7 @@ object Config {
     val uiRescaleWidth = false
     val useThreads = 8
     val animationResolution = 128
+    val maxAnimFrameCount = 720
     val minSpeed = 0.0625f // 1-16th
     val maxSpeed = 16f
 }
