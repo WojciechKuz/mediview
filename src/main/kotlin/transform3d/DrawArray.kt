@@ -271,7 +271,11 @@ suspend fun getComposeImageAngled(imgArr: ArrayOps, view: ExtView, depth: Float,
     val mergeFromIndex = if(mode == Mode.NONE) 0 else depthIndex // NONE needs to start at 0
     val merge = modeMergeStrategy(mode, firstHitVal, depthIndex)
     val ensureAngleInRange = { angle: Double ->
-        if(angle > 180.0) angle - 360.0 else angle
+        when {
+            angle > 180.0 -> angle - 360.0
+            angle < -180.0 -> angle + 360.0
+            else -> angle
+        }
     }
     /** Angles. first is yzAngle, second is xzAngle */
     val adjustedAngles = when(view) {

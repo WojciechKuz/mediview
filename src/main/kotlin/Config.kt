@@ -1,4 +1,5 @@
 import dev.romainguy.kotlin.math.Float3
+import transform3d.View
 
 @Suppress("MayBeConstant")
 object Config {
@@ -23,6 +24,7 @@ object Config {
     val maxAnimFrameCount = 720
     val minSpeed = 0.0625f // 1-16th
     val maxSpeed = 16f
+    val animateView = View.SIDE
 }
 class MySliderRange(val start: Float, val end: Float) {
     val range = start..(end - 1) // do not change

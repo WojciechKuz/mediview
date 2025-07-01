@@ -7,6 +7,7 @@ import transform3d.ArrayOps
 import transform3d.ExtView
 import transform3d.Indices3
 import transform3d.MySize3
+import transform3d.View
 import transform3d.createShortArrayWithCoroutines
 import transform3d.getComposeImageAngled
 import transform3d.justForLoop
@@ -48,8 +49,6 @@ class AnimationManager(val managerRef: UIManager) {
             ) ]
         }
         volume = ArrayOps(targetVolume, size.width, size.height)
-    }.invokeOnCompletion {
-        println("Data copied to smaller arrayOps")
     }
 
     /** Generated frames */
@@ -74,13 +73,17 @@ class AnimationManager(val managerRef: UIManager) {
             //coroutineForLoopSus(animFrameCount)
             justForLoop(animFrameCount)
             { i ->
-                val frameAngles = animStartAngles.keys.map { key ->
-                    key to Interpol.interpolate2Values(
-                        animStartAngles[key]!!,
-                        animEndAngles[key]!!,
-                        i * 1f / animFrameCount
-                    )
-                }.associate { it }
+                val frameAngles = interpolatedAngles(animStartAngles, animEndAngles, i * 1f / animFrameCount).toMutableMap()
+                when(Config.animateView) {
+                    View.SLICE -> {} // do nothing
+                    View.SIDE -> {
+                        frameAngles[Angle.XZAngle] = frameAngles[Angle.XZAngle]!! + 90f
+                    }
+                    View.TOP -> {
+                        frameAngles[Angle.XZAngle] = frameAngles[Angle.XZAngle]!! + 90f
+                        frameAngles[Angle.YZAngle] = frameAngles[Angle.YZAngle]!! + 90f
+                    }
+                }
                 val bitmap = generateFrame(frameAngles[Angle.XZAngle]!!.toDouble(), frameAngles[Angle.YZAngle]!!.toDouble())
                 if(bitmap == null) {
                     println("return due to null bitmap")
@@ -92,6 +95,8 @@ class AnimationManager(val managerRef: UIManager) {
             infoTextSetter?.set("Animation is ready")
             println("Animation is ready")
             println("frames array has ${frames.size} frames")
+            frozenStartAngles = animStartAngles.toMap()
+            frozenEndAngles = animEndAngles.toMap()
             setSliderPos?.set(0f)
             setFrameRange?.set(0f..(frames.size-1).toFloat())
             genFinish?.set(true)
@@ -122,8 +127,29 @@ class AnimationManager(val managerRef: UIManager) {
         }
         return newIdx
     }
+    private var frozenStartAngles = mapOf(
+        Angle.XZAngle to 0f,
+        Angle.YZAngle to 0f
+    )
+    private var frozenEndAngles = mapOf(
+        Angle.XZAngle to 0f,
+        Angle.YZAngle to 0f
+    )
+    fun interpolatedAngles(startAngles: Map<Angle, Float>, endAngles: Map<Angle, Float>, index: Float): Map<Angle, Float> {
+        return startAngles.keys.map { key ->
+            key to Interpol.interpolate2Values(
+                startAngles[key]!!,
+                endAngles[key]!!,
+                index
+            )
+        }.associate { it }
+    }
+
     fun safeGetFrame(frameIdx: Int, whenGotFrame: (ImageBitmap) -> Unit) {
         if(frameIdx < frames.size) {
+            infoTextSetter?.set(
+                "Animation is ready. Current angles ${printAngles(interpolatedAngles(frozenStartAngles, frozenEndAngles, frameIdx * 1f / frames.size))}"
+            )
             whenGotFrame(frames[frameIdx])
         }
         else {
