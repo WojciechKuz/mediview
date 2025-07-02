@@ -21,19 +21,39 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.unit.dp
+import dicom.saveImage
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import transform3d.Angle
 import transform3d.ExtView
 import transform3d.InterpolationSA
+import transform3d.coroutineForLoop
 import transform3d.printAngles
 import kotlin.math.min
 
 /** if speed's less than 1, show it as fraction */
 fun iShowSpeedNicely(speed: Float) = if(speed < 1f) "1/${(1f/speed).toInt()}x" else "${speed.toInt()}x"
 
+fun exportAnimation(animate: AnimationManager) { // TODO test export animation
+    val dir = ReadHelp.pickWriteDirJFC()
+    if(dir.isEmpty()) return
+    val allFrames = animate.allFrames
+
+    CoroutineScope(Dispatchers.Default).launch {
+        coroutineForLoop(allFrames.size) { i ->
+            saveImage(dir, "animation_frame${i.toString().padStart(3, '0')}.png", allFrames[i])
+        }
+    }.invokeOnCompletion {
+        animate.infoTextSetter?.set("Animation exported")
+        println("animation exported")
+    }
+}
+
 @Composable
 @Preview
-fun animationBlock(imgsize: Int, uiImageMap: MutableMap<ExtView, ImageBitmap?>, manager: UIManager) { // TODO just turned computer on? Test this program
+fun animationBlock(imgsize: Int, uiImageMap: MutableMap<ExtView, ImageBitmap?>, manager: UIManager) {
     val modifier = Modifier.padding(end = 2.dp)
     Box {
         Row {
@@ -93,11 +113,13 @@ fun animationBlock(imgsize: Int, uiImageMap: MutableMap<ExtView, ImageBitmap?>, 
                         Text("Generate")
                     } // generate
                     Button(
-                        onClick = { println("TODO") }, // TODO export animation
+                        onClick = {
+                            exportAnimation(animate)
+                        },
                         modifier = modifier
                     ) {
                         Text("Export")
-                    } // export (TODO)
+                    }
                     Text(infoText)
                 }
 

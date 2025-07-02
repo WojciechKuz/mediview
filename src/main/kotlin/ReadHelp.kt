@@ -6,6 +6,8 @@ import dicom.filestructure.groups.AllTagsFromPDF
 import java.awt.FileDialog
 import java.awt.Frame
 import java.io.File
+import javax.swing.JFileChooser
+import javax.swing.filechooser.FileSystemView
 
 /** Easily open DICOM File. Use for example in tests. */
 object ReadHelp {
@@ -27,6 +29,31 @@ object ReadHelp {
         val dirF = File(dir)
         val fList = dirF.listFiles()?: return emptyList()
         return fList.map { it.name }
+    }
+
+    fun pickWriteDirFD(): String {
+        if(Config.forbiddenApple) System.setProperty("apple.awt.fileDialogForDirectories", "true")
+
+        val dialog = FileDialog(null as Frame?, "Select Directory to write to", FileDialog.LOAD)
+        dialog.isVisible = true
+
+        if(Config.forbiddenApple) System.setProperty("apple.awt.fileDialogForDirectories", "false")
+
+        return dialog.directory
+    }
+
+    fun pickWriteDirJFC(): String {
+        val fileChooser = JFileChooser(FileSystemView.getFileSystemView()).apply {
+            fileSelectionMode = JFileChooser.DIRECTORIES_ONLY // Ustawienie trybu na wybór katalogu
+            dialogTitle = "Wybierz folder"
+            approveButtonText = "Wybierz"
+            approveButtonToolTipText = "Wybierz bieżący katalog jako miejsce docelowe"
+        }
+
+        val result = fileChooser.showOpenDialog(null as Frame?)
+        return if(result == JFileChooser.APPROVE_OPTION) {
+            fileChooser.selectedFile.toString()
+        } else ""
     }
 
     /** Get DICOM file cursor for specified file */

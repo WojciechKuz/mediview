@@ -55,6 +55,7 @@ class AnimationManager(val managerRef: UIManager) {
     private var frames: MutableList<ImageBitmap> = mutableListOf()
     /** get only the number of animation frames. To set target animation frame count use animFrameCount */
     val framesCount: Int; get() = frames.size
+    val allFrames: List<ImageBitmap>; get() = frames
 
     private suspend fun generateFrame(xzAngle: Double, yzAngle: Double): ImageBitmap? {
         return getComposeImageAngled(volume!!, ExtView.FREE, depth,

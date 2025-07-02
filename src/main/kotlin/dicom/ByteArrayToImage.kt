@@ -3,13 +3,17 @@ package dicom
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.toComposeImageBitmap
 import androidx.compose.ui.graphics.asSkiaBitmap
+import androidx.compose.ui.graphics.toAwtImage
 import java.io.ByteArrayInputStream
 import javax.imageio.ImageIO
 import org.jetbrains.skia.Bitmap
 import org.jetbrains.skia.ColorAlphaType
 import org.jetbrains.skia.ColorType
 import org.jetbrains.skia.ImageInfo
+import java.awt.image.BufferedImage
 import java.io.File
+import java.io.FileOutputStream
+import java.io.IOException
 
 fun skiaBitmapInfo(sbitmap: Bitmap) {
     val width = sbitmap.width
@@ -140,4 +144,17 @@ fun jpegToByteArray(jpegBytes: ByteArray, imgInfo: ImageInfo = standardImgInfo /
     if (bitmap == null)
         return null
     return imageBitmapToByteArray(bitmap, greyImgInfo)
+}
+
+
+fun saveImage(directory: String, imageName: String, bitmap: ImageBitmap): Boolean {
+    val awtImg: BufferedImage = bitmap.toAwtImage()
+    val file = File(directory, imageName)
+    try {
+        ImageIO.write(awtImg, "png", file)
+        return true
+    } catch (e: IOException) {
+        e.printStackTrace()
+        return false
+    }
 }

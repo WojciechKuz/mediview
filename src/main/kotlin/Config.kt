@@ -25,6 +25,8 @@ object Config {
     val minSpeed = 0.0625f // 1-16th
     val maxSpeed = 16f
     val animateView = View.SIDE
+    /** If targeting Apple platform. Affects only one file dialog. */
+    val forbiddenApple = false
 }
 class MySliderRange(val start: Float, val end: Float) {
     val range = start..(end - 1) // do not change
