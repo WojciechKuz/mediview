@@ -142,7 +142,7 @@ class UIManager(val uiImageMap: MutableMap<ExtView, ImageBitmap?>) {
         }
         println("Loaded dicom data in $time ms")
         size = imageAndData.imageArray.size
-        println("3D array is $size")
+        //println("3D array is $size")
         adjustedValueRange = getImageValueRange()
         firstHitValue = adjustedValueRange.start.toShort()
 
@@ -434,7 +434,7 @@ class UIManager(val uiImageMap: MutableMap<ExtView, ImageBitmap?>) {
                     if (img == null) {
                         println("Failed to get image for $view")
                     } else {
-                        println("Got $view image of size ${img.width}x${img.height}")
+                        //println("Got $view image of size ${img.width}x${img.height}")
                         println()
                     }
                 }

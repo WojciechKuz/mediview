@@ -8,6 +8,7 @@ import dicom.jpegByteArrayToRawByteArray
 import dicom.tagAsUInt
 import kotlin.collections.component1
 import kotlin.collections.component2
+import kotlin.math.abs
 
 /** Only dataMapToImageData() is important here */
 object InterpretData {
@@ -50,7 +51,7 @@ object InterpretData {
 
     /** For pixelSize element and distance between slices, get by how much z axis should be rescaled. */
     fun interpretZScaleFactor(zPosition1: Double, zPosition2: Double, pxSpData: DicomDataElement<out Any>): Double {
-        val zDist = zPosition2 - zPosition1
+        val zDist = abs(zPosition2 - zPosition1)
         val pxSpacing = (pxSpData.value as String).trim().split("\\")[0].trim().toDouble() // 0.43/0.43
         return zDist / pxSpacing // 2.423/0.43 = 5.63
     }

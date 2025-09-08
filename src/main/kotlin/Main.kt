@@ -209,7 +209,7 @@ fun whatsWrongWithSlidersExample() {
         valueRange = 0f..256f,
         onValueChange = {
             sliderPosition = it
-            println("Red $sliderPosition")
+            //println("Red $sliderPosition")
         },
         colors = slidcol,
         steps = 256,
