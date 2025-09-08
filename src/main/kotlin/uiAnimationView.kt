@@ -36,7 +36,7 @@ import kotlin.math.min
 /** if speed's less than 1, show it as fraction */
 fun iShowSpeedNicely(speed: Float) = if(speed < 1f) "1/${(1f/speed).toInt()}x" else "${speed.toInt()}x"
 
-fun exportAnimation(animate: AnimationManager) { // TODO test export animation
+fun exportAnimation(animate: AnimationManager) {
     val dir = ReadHelp.pickWriteDirJFC()
     if(dir.isEmpty()) return
     val allFrames = animate.allFrames

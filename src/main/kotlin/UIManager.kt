@@ -16,7 +16,9 @@ import transform3d.getComposeImageAngled
 import transform3d.tagNotFoundErr
 import transform3d.toExtView
 import transform3d.toView
+import kotlin.math.abs
 import kotlin.math.round
+import kotlin.math.sqrt
 import kotlin.system.measureTimeMillis
 
 // val trigger: () -> Unit
@@ -33,6 +35,8 @@ class UIManager(val uiImageMap: MutableMap<ExtView, ImageBitmap?>) {
     var mode = Mode.EFFICIENT_NONE
     var displaying = Displaying.THREE
     var color = MyColor.GREYSCALE
+    var measuring = false
+    var voxelSize = -1f
 
     /** **Only to compare** with previous values. Do not use in any computations! */
     val depthSliderVals = mutableMapOf(
@@ -142,6 +146,11 @@ class UIManager(val uiImageMap: MutableMap<ExtView, ImageBitmap?>) {
         adjustedValueRange = getImageValueRange()
         firstHitValue = adjustedValueRange.start.toShort()
 
+        // pixel spacing
+        val pxSpacingTag = imageAndData.dataMap[tagAsUInt("[0028 0030]")]?: throw tagNotFoundErr("[0028 0030]")
+        val pxSpacing = (pxSpacingTag.value as String).trim().split("\\")[0].trim().toDouble()
+        voxelSize = pxSpacing.toFloat()
+
         redrawVisible() // no need to queue
 
         textUpdater()
@@ -194,9 +203,80 @@ class UIManager(val uiImageMap: MutableMap<ExtView, ImageBitmap?>) {
         textUpdater()
     }
 
+    var point0 = resetPoint()
+    var point0view = View.TOP
+    var point1 = resetPoint()
+    var point1view = View.TOP
+    fun resetPoint() = mutableMapOf(
+        View.SLICE to -1f,
+        View.SIDE to -1f,
+        View.TOP to -1f
+    )
+
+    fun isPointSet(point: MutableMap<View, Float>): Boolean {
+        return point[View.SLICE] != -1f && point[View.SIDE] != -1f && point[View.TOP] != -1f
+    }
+    fun measureWidthAndSurface(absx: Float, absy: Float, view: View) {
+        if(!isPointSet(point0) && !isPointSet(point1)) // no point set
+        {
+            // no point set
+            point0view = view
+            point0[widthOfThisViewIsDepthOfView(view)] = absx
+            point0[heightOfThisViewIsDepthOfView(view)] = absy
+            point0[view] = depthValues[view.toExtView()]!!
+        }
+        else if(isPointSet(point0) && !isPointSet(point1)) { // one point set
+            if(view == point0view) {
+                point1view = view
+                point1[widthOfThisViewIsDepthOfView(view)] = absx
+                point1[heightOfThisViewIsDepthOfView(view)] = absy
+                point1[view] = depthValues[view.toExtView()]!!
+            }
+            else {
+                point0 = resetPoint()
+            }
+        }
+        else { // both points set
+            point0 = resetPoint()
+            point1 = resetPoint()
+        }
+        textUpdater()
+    }
+    fun getMeasureText(): String {
+        if(isPointSet(point0) && isPointSet(point1)) // both points set
+        {
+            val p0x = point0[widthOfThisViewIsDepthOfView(point0view)]!!
+            val p0y = point0[heightOfThisViewIsDepthOfView(point0view)]!!
+            val p1x = point1[widthOfThisViewIsDepthOfView(point1view)]!!
+            val p1y = point1[heightOfThisViewIsDepthOfView(point1view)]!!
+            val xLen = abs(p0x - p1x) * 512f * voxelSize / 10
+            val yLen = abs(p0y - p1y) * 512f * voxelSize / 10 // div by 10 because voxelSize is in [mm] and we show in ui [cm]
+
+            fun pita(a: Float, b: Float) = sqrt(a*a+b*b)
+            val length = pita(xLen, yLen)
+
+            val surface = xLen * yLen
+
+            val strLen = "%.2f".format(length)
+            val strSur = "%.2f".format(surface)
+
+            return "len: $strLen ${Config.lengthUnit}, sur: $strSur ${Config.surfaceUnit}"
+        }
+        else if(isPointSet(point0) && !isPointSet(point1)) { // one point set
+            return "1 of 2 points set to measure"
+        }
+        else { // no points set
+            return "0 of 2 points set to measure"
+        }
+    }
     /** image tapped. parameters absx and absy should be normalized. */
     fun viewTapChange(absx: Float, absy: Float, view: ExtView) {
         if(!::imageAndData.isInitialized || !::size.isInitialized) { return } // yes, slider may be moved before loadDicom()
+
+        if(measuring) {
+            measureWidthAndSurface(absx, absy, view.toView())
+            return
+        }
 
         // width of this view as depth of view1, height of this view as depth of view2
         val view1 = widthOfThisViewIsDepthOfView(view.toView()).toExtView()
@@ -300,8 +380,9 @@ class UIManager(val uiImageMap: MutableMap<ExtView, ImageBitmap?>) {
         val yzAngle = angleValues[Angle.YZAngle]!! * 180f
         val angleText = "horizontal: ${"%.2f".format(xzAngle)}°, vertical: ${"%.2f".format(yzAngle)}°"
         val valueText = "value: ${valueAt(mappedDepths[ExtView.SIDE]!!, mappedDepths[ExtView.TOP]!!, mappedDepths[ExtView.SLICE]!!)}; "
+        val measures = getMeasureText()
         when(displaying) {
-            Displaying.THREE -> textSetter?.set(valueText + depthsText)
+            Displaying.THREE -> textSetter?.set(valueText + depthsText + if(measuring) "\n " + measures else "")
             Displaying.PROJECTION -> textSetter?.set(valueText + "depth ${mappedDepths[ExtView.FREE]}; angles: $angleText")
             Displaying.ANIMATION -> textSetter?.set(valueText + "depth ${mappedDepths[ExtView.FREE]}; angles: $angleText")
         }

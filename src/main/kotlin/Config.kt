@@ -7,7 +7,7 @@ object Config {
     enum class InterpolateBy {To512, JustThickness, SliceThickn, SliceDist}
     val interpolateBy = InterpolateBy.SliceDist
     val fillDepthToWidthSize = true
-    val rotateDirection = Float3(1f, 1f, 1f)
+    val rotateDirection = Float3(1f, 1f, 1f) // set -1f if other way
     val windowName = "feetpic 📷🦶" //"MediView by wojkuzb"
     val sliderSteps = 0
     val sliderRange = MySliderRange(0f, 256f)
@@ -25,6 +25,8 @@ object Config {
     val minSpeed = 0.0625f // 1-16th
     val maxSpeed = 16f
     val animateView = View.SIDE
+    val lengthUnit = "cm"
+    val surfaceUnit = "cm²"
     /** If targeting Apple platform. Affects only one file dialog. */
     val forbiddenApple = false
 }

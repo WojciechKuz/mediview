@@ -60,6 +60,7 @@ fun App() {
             var displText by remember { mutableStateOf("Display: ${manager.displaying}") }
             //var color by remember { mutableStateOf(manager.color) }
             var colorText by remember { mutableStateOf("Colors: ${manager.color}") }
+            var measuringText by remember { mutableStateOf("Measuring: ${if(manager.measuring) "on" else "off"}") }
             Row {
                 Button(
                     onClick = {
@@ -119,6 +120,18 @@ fun App() {
                     modifier = Modifier.padding(end = 8.dp)
                 ) {
                     Text(colorText)
+                }
+                if(displ == Displaying.THREE) {
+                    Button(
+                        onClick = {
+                            manager.measuring = !manager.measuring
+                            measuringText = "Measuring: ${if(manager.measuring) "on" else "off"}"
+                            manager.textUpdater()
+                        },
+                        modifier = Modifier.padding(end = 8.dp)
+                    ) {
+                        Text(measuringText)
+                    }
                 }
                 var valuesText by remember { mutableStateOf("") }
                 manager.setTextSetter { valuesText = it }
