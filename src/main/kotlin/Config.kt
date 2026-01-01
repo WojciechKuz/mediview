@@ -8,7 +8,7 @@ object Config {
     val interpolateBy = InterpolateBy.SliceDist
     val fillDepthToWidthSize = true
     val rotateDirection = Float3(1f, 1f, 1f) // set -1f if other way
-    val windowName = "MediView by wojkuzb" //"feetpic 📷🦶"
+    val windowName = "feetpic 📷🦶" //"MediView by wojkuzb"
     val sliderSteps = 0
     val sliderRange = MySliderRange(0f, 256f)
     val selectedPixel = (512 * 3 / 4) * 512 + (512 * 1 / 2)

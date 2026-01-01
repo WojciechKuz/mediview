@@ -1,6 +1,10 @@
 
 # mediview by wojkuzb
-Aplikacja do wyświetlania plików DICOM
+Aplikacja do wyświetlania plików DICOM.
+
+Napisana w języku Kotlin, wykorzystuje Compose multiplatform do GUI, korutyny do wielowątkowości, i bibliotekę twelveMonkeys do wczytywania obrazów.
+
+Oficjalna nazwa projektu to MediView, ale jako żart okno pokazuje nazwę "feetpic"
 
 ⚠ Ponieważ aplikacja operuje na obrazach, proszę zwiększyć ilość pamięci
 dostępnej dla aplikacji do minimum:
